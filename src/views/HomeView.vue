@@ -4,21 +4,12 @@ import Handwave from '@/components/Handwave.vue'
 </script>
 
 <template>
-  <main
-    class="home"
-    aria-labelledby="home-title"
-  >
-    <section
-      class="hero"
-      role="region"
-      aria-labelledby="home-title"
-    >
+  <main class="home" aria-labelledby="home-title">
+    <section class="hero" role="region" aria-labelledby="home-title">
       <!-- Colonna testo -->
       <article class="intro">
         <h1 id="home-title" class="title">Ciao</h1>
-
         <h2 class="subtitle">Sono Anna Cazzanelli</h2>
-
         <h3 class="role">Digital Designer &amp; Illustratrice</h3>
 
         <p class="payoff">Se vuoi saperne di più di me</p>
@@ -29,66 +20,65 @@ import Handwave from '@/components/Handwave.vue'
           aria-label="Vai alla pagina About per saperne di più su Anna Cazzanelli"
           title="Scopri di più"
         >
-         Clicca qui
+          Clicca qui
         </RouterLink>
       </article>
 
       <!-- Colonna mano animata -->
       <div class="hand-wrap" aria-hidden="true">
-        <Handwave
-          :canvas-width="900"
-          :canvas-height="900"
-          :display-width="580"
-          :display-height="580"
-        />
+        <!-- Il canvas si adatta alla LARGHEZZA di .hand-wrap (no stretch) -->
+        <Handwave :canvas-width="900" :canvas-height="900" />
       </div>
     </section>
   </main>
 </template>
 
 <style scoped>
-/* Layout base */
+/* ---------------- Base ---------------- */
 .home{
-  padding-top: 8px;              /* un po’ meno spazio sopra */
+  padding-top: 8px;
   padding-bottom: 64px;
   background: var(--color-surface);
   color: var(--color-text);
 }
 
+/* 2 colonne SEMPRE (testo | mano) */
 .hero{
   max-width: 1280px;
   margin-left: var(--margin-desktop);
   margin-right: var(--margin-desktop);
 
-  /* spazio verticale contenuto, poi alzo tutto con translate */
   padding-top: 32px;
   padding-bottom: 56px;
 
   display: grid;
-  grid-template-columns: 1.2fr 1fr;  /* testo più largo della mano */
+  /* testo più largo + colonna immagine ampia e limitata */
+  grid-template-columns: 1.2fr clamp(300px, 36vw, 520px);
   align-items: center;
   gap: 56px;
 
-  /* alza l'intero blocco rispetto all'header */
   transform: translateY(-32px);
-  /* se usi anchor type #home/non sovrapporre la navbar */
   scroll-margin-top: 80px;
 }
 
-/* Tipografia — dimensioni bilanciate con clamp() */
+.intro{ min-width: 0; } /* evita tagli imprevisti */
+
+/* --------- Tipografia (no wrap + clamp per non tagliare) --------- */
 .title{
   margin: 0 0 10px 0;
   color: var(--color-accent);
   font-weight: 800;
   line-height: 1.03;
-  font-size: clamp(110px, 17vw, 400px);
+  white-space: nowrap;
+  font-size: clamp(140px, 17vw, 400px);
 }
 
 .subtitle{
   margin: 0 0 6px 0;
   font-weight: 700;
   line-height: 1.18;
-  font-size: clamp(22px, 3.2vw, 44px);
+  white-space: nowrap;
+  font-size: clamp(20px, 3.4vw, 44px);
   letter-spacing: .2px;
 }
 
@@ -96,7 +86,8 @@ import Handwave from '@/components/Handwave.vue'
   margin: 0 0 18px 0;
   font-weight: 500;
   line-height: 1.24;
-  font-size: clamp(18px, 2.6vw, 34px);
+  white-space: nowrap;
+  font-size: clamp(18px, 2.8vw, 34px);
   opacity: .95;
 }
 
@@ -130,48 +121,67 @@ import Handwave from '@/components/Handwave.vue'
   outline-offset: 3px;
 }
 
-/* Mano: piccolo ritocco verso l’alto */
+/* --------- Colonna mano --------- */
+/* Qui controlli la dimensione effettiva dell'animazione: larghezza = NO stretch */
 .hand-wrap{
-  display: grid;
-  place-items: center;
-  max-width: 100%;
-  transform: translateY(-40px);  /* prima era -80px */
+  width: clamp(300px, 36vw, 520px);   /* grande su desktop */
+  justify-self: end;       
+  margin-top:-40px ;           /* allineata a destra della colonna */
 }
 
-/* Tablet */
+/* ---------------- Large desktop ---------------- */
+@media (min-width: 1400px){
+  .hero{
+    grid-template-columns: 1.1fr clamp(360px, 38vw, 560px);
+  }
+  .hand-wrap{
+    width: clamp(360px, 38vw, 560px);
+    margin-top: -30px;
+  }
+}
+
+/* ---------------- Tablet ---------------- */
 @media (max-width: 980px){
   .hero{
     margin-left: var(--margin-mobile);
     margin-right: var(--margin-mobile);
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr clamp(220px, 30vw, 320px); /* mano a destra, ridotta */
     gap: 36px;
     padding-top: 28px;
     padding-bottom: 44px;
-    transform: translateY(-18px);   /* alza un po’ anche su tablet */
+    transform: translateY(-18px);
     scroll-margin-top: 72px;
   }
+
+  .title{    font-size: clamp(110px, 16vw, 260px); }
+  .subtitle{ font-size: clamp(19px, 3.1vw, 36px);  }
+  .role{     font-size: clamp(17px, 2.4vw, 30px);  }
+
   .hand-wrap{
-    transform: translateY(-24px) scale(.82);
-    transform-origin: top center;
+    width: clamp(220px, 30vw, 320px);
   }
 }
 
-/* Mobile */
+/* ---------------- Mobile ---------------- */
 @media (max-width: 600px){
-  .title{ margin-bottom: 6px; }
   .hero{
+    grid-template-columns: 1fr clamp(180px, 28vw, 240px); /* sempre due colonne */
+    gap: 24px;
     transform: translateY(-10px);
     scroll-margin-top: 64px;
   }
+
+  .title{    font-size: clamp(88px, 18vw, 200px); }
+  .subtitle{ font-size: clamp(18px, 4.0vw, 28px); }
+  .role{     font-size: clamp(16px, 3.4vw, 24px); }
+
   .hand-wrap{
-    transform: translateY(-12px) scale(.66);
+    width: clamp(180px, 28vw, 240px); /* ridotta ma proporzionata (no stretch) */
   }
 }
 
-/* rispettare reduced motion */
+/* Accessibilità: niente animazioni di posizione se l'utente le riduce */
 @media (prefers-reduced-motion: reduce){
-  .hero, .hand-wrap{
-    transform: none !important;
-  }
+  .hero{ transform: none !important; }
 }
 </style>
