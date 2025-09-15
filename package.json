@@ -14,6 +14,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@rive-app/canvas": "^2.31.5",
     "bootstrap": "^5.3.8",
     "firebase": "^12.2.0",
     "pinia": "^3.0.3",
