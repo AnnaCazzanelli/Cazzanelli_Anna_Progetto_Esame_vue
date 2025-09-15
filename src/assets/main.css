@@ -1,0 +1,232 @@
+/*
+ * Stili globali e variabili
+ * Basati sul documento "Testo riassuntivo"
+*/
+:root {
+  /* Colori - Light Mode */
+  --color-surface-light: #FDFDFE;
+  --color-text-light: #1A1A1C;
+  --color-accent-light: #7A5CFF;
+  --color-hover-light: #7357D9;
+
+  /* Colori - Dark Mode */
+  --color-surface-dark: #111113;
+  --color-text-dark: #F2F2F5;
+  --color-accent-dark: #8C6CFF;
+  --color-hover-dark: #7357D9;
+
+  /* Impostazioni di default (Light Mode) */
+  --color-surface: var(--color-surface-light);
+  --color-text: var(--color-text-light);
+  --color-accent: var(--color-accent-light);
+  --color-hover: var(--color-hover-dark);
+
+  /* Margini e spaziatura */
+  --margin-desktop: 40px;
+  --margin-mobile: 20px;
+
+  /* Border Radius */
+  --border-radius-btn: 8px;
+  --border-radius-card: 12px;
+}
+
+/* Attivazione della modalità scura */
+body.dark-mode {
+  --color-surface: var(--color-surface-dark);
+  --color-text: var(--color-text-dark);
+  --color-accent: var(--color-accent-dark);
+  --color-hover: var(--color-hover-dark);
+}
+
+/* Stili di base per il corpo del sito */
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  padding: 0 var(--margin-desktop);
+  margin: 0;
+}
+
+/* Tipografia - Titoli */
+h1,
+h2,
+h3 {
+  font-family: 'Neue Kabel', 'Montserrat', sans-serif;
+  font-style: normal;
+  font-weight: 900;
+  color: var(--color-accent);
+}
+
+h1 {
+  font-size: 64pt;
+  line-height: 77pt;
+}
+
+h2 {
+  font-size: 32pt;
+  line-height: 42pt;
+}
+
+h3 {
+  font-size: 18pt;
+  line-height: 27pt;
+}
+
+/* Tipografia - Paragrafi e testi */
+p {
+  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+  font-size: 18pt;
+  line-height: 27pt;
+  color: var(--color-text);
+}
+
+/* Layout dell'Header */
+.header {
+  display: flex;
+  justify-content: flex-end;
+  /* Allinea il menu a destra */
+  align-items: center;
+  padding: 20px var(--margin-desktop);
+}
+
+/* Stili per il menu di navigazione desktop */
+.desktop-nav a {
+  font-size: 16pt;
+  line-height: 19pt;
+  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--color-text);
+  margin-left: 20px;
+}
+
+.desktop-nav a:hover {
+  color: var(--color-hover);
+}
+
+/* Nasconde il menu mobile e l'icona hamburger su desktop */
+.menu-icon,
+.mobile-nav {
+  display: none;
+}
+
+
+/* Stili per i bottoni */
+.btn {
+  font-size: 18pt;
+  line-height: 22pt;
+  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+  border-radius: var(--border-radius-btn);
+  border: 1px solid var(--color-text);
+  padding: 10px 20px;
+  display: inline-block;
+  text-decoration: none;
+  background-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.btn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-surface);
+}
+
+/* Stili per card e immagini */
+.card,
+.img-container {
+  border-radius: var(--border-radius-card);
+}
+
+/* Adattamento per dispositivi mobili */
+@media (max-width: 768px) {
+
+  /* Layout dell'Header per mobile */
+  .header {
+    padding: 20px var(--margin-mobile);
+    justify-content: flex-end;
+  }
+
+  /* Nasconde il menu desktop e mostra l'icona hamburger */
+  .desktop-nav {
+    display: none;
+  }
+
+  .menu-icon {
+    display: block;
+    cursor: pointer;
+    position: relative;
+    z-index: 1000;
+  }
+
+  .menu-icon span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: var(--color-text);
+    margin: 5px 0;
+  }
+
+  /* Stile del menu mobile a comparsa */
+  .mobile-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    /* Inizialmente fuori dallo schermo */
+    width: 100%;
+    height: 100vh;
+    background-color: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: right 0.3s ease-in-out;
+    z-index: 999;
+  }
+
+  .mobile-nav.is-open {
+    right: 0;
+    /* Si sposta dentro lo schermo */
+  }
+
+  .mobile-nav a {
+    font-size: 28pt;
+    line-height: 36pt;
+    font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--color-text);
+    margin: 15px 0;
+  }
+
+  .mobile-nav a:hover {
+    color: var(--color-hover);
+  }
+
+  /* Stili per il resto del sito su mobile */
+  body {
+    padding: 0 var(--margin-mobile);
+  }
+
+  h1 {
+    font-size: 40pt;
+    line-height: 48pt;
+  }
+
+  h2 {
+    font-size: 24pt;
+    line-height: 31pt;
+  }
+
+  h3 {
+    font-size: 20pt;
+    line-height: 26pt;
+  }
+
+  p {
+    font-size: 16pt;
+    line-height: 24pt;
+  }
+
+  .btn {
+    font-size: 16pt;
+    line-height: 19pt;
+  }
+}
