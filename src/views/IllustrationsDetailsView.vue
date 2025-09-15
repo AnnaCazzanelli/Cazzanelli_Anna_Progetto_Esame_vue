@@ -286,7 +286,7 @@ watch(() => route.params.id, fetchIllustration)
 /* Back */
 .back-btn {
   position: absolute;
-  top: -60px;           /* più alto del titolo */
+  top: -60px; /* più alto del titolo */
   left: 0;
   width: 48px;
   height: 48px;
@@ -306,14 +306,8 @@ watch(() => route.params.id, fetchIllustration)
   display: block;
 }
 
-.back-btn:hover {
-  background: rgba(0, 0, 0, .06);
-}
-
-.back-btn:active {
-  transform: scale(.98);
-}
-
+.back-btn:hover { background: rgba(0, 0, 0, .06); }
+.back-btn:active { transform: scale(.98); }
 .back-btn:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
@@ -347,10 +341,13 @@ watch(() => route.params.id, fetchIllustration)
   overflow: hidden;
 }
 
+/* 🔧 Immagine: proporzioni SEMPRE rispettate (no crop) */
 .stage-img {
-  width:auto;
-  height:600px;
-  object-fit: cover;
+  width: auto;
+  max-width: 100%;
+  height: clamp(360px, 62vh, 720px); /* desktop/tablet responsivo */
+  max-height: 80vh;
+  object-fit: contain;               /* niente tagli */
   display: block;
 }
 
@@ -374,19 +371,9 @@ watch(() => route.params.id, fetchIllustration)
   pointer-events: none;
 }
 
-.nav:hover {
-  background: rgba(0, 0, 0, .06);
-  transform: scale(1.05);
-}
-
-.nav:active {
-  transform: scale(.95);
-}
-
-.nav:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
+.nav:hover { background: rgba(0, 0, 0, .06); transform: scale(1.05); }
+.nav:active { transform: scale(.95); }
+.nav:disabled { opacity: .35; cursor: not-allowed; }
 
 /* Meta */
 .meta {
@@ -432,22 +419,27 @@ watch(() => route.params.id, fetchIllustration)
 
 /* Mobile */
 @media (max-width: 768px) {
-  .page {
-    padding: 32px var(--margin-mobile) 96px;
-  }
+  .page { padding: 32px var(--margin-mobile) 96px; }
 
   .viewer {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr;      /* frecce sopra/sotto o nascoste */
     gap: 16px;
     margin-bottom: 40px;
   }
 
-  .nav {
-    display: none; /* se vuoi tenerli anche su mobile, rimuovi questa riga */
-  }
+  .nav { display: none; }            /* se vuoi tenerle anche su mobile, rimuovi questa riga */
 
   .stage {
     min-height: 300px;
+    padding: 8px 0;                  /* respiro verticale */
+  }
+
+  /* 🔧 Mobile: scala l’immagine senza tagliare */
+  .stage-img {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
   }
 
   .meta {
@@ -455,9 +447,6 @@ watch(() => route.params.id, fetchIllustration)
     gap: 28px;
   }
 
-  .back-btn {
-    top: -80px;
-    left: 8px;
-  }
+  .back-btn { top: -80px; left: 8px; }
 }
 </style>
