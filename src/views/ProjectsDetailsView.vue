@@ -347,10 +347,21 @@ watch(() => route.params.id, fetchProject)
   text-decoration:none;
   transition:background-color .2s, transform .1s;
 }
-.back-btn .icon{width:24px;height:24px;display:block}
-.back-btn:hover{background:rgba(0,0,0,.06)}
-.back-btn:active{transform:scale(.98)}
-.back-btn:focus-visible{outline:3px solid var(--color-accent);outline-offset:2px}
+.back-btn .icon{
+  width:24px;
+  height:24px;
+  display:block
+}
+.back-btn:hover{
+  background:rgba(0,0,0,.06)
+}
+.back-btn:active{
+  transform:scale(.98)
+}
+.back-btn:focus-visible{
+  outline:3px solid var(--color-accent);
+  outline-offset:2px
+}
 
 /* Titolo */
 .title{
@@ -380,7 +391,11 @@ watch(() => route.params.id, fetchProject)
   touch-action:pan-y;
   background:var(--color-surface);
 }
-.stage-img{width:100%;height:auto;object-fit:contain}
+.stage-img{
+  width:100%;
+  height:auto;
+  object-fit:contain
+}
 
 /* Nav (senza bordo) */
 .nav{
