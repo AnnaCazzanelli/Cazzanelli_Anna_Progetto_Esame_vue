@@ -10,7 +10,7 @@ import { RouterLink } from 'vue-router'
     aria-labelledby="cta-title"
   >
     <h2 id="cta-title" class="sr-only">Contatti</h2>
-
+<p>Per lavori su commissione, collaborazioni o altro...</p>
     <!-- Bottone principale -->
     <RouterLink
       to="/contacts"
