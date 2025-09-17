@@ -490,6 +490,7 @@ watch(() => route.params.id, fetchProject)
   padding:8px 12px;
   border-radius:999px;
   font-size:.95rem;
+  font-family:var(--font-body);
   line-height:1;
   border:1px solid currentColor
 }
