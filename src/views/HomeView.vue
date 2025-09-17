@@ -574,6 +574,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   gap: 6px;
   font-weight: 600;
   font-size: 15px;
+  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
   text-decoration: none;
   color: var(--color-accent);
   opacity: .9;

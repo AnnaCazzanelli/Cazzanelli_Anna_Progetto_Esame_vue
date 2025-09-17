@@ -109,6 +109,8 @@ import { RouterLink } from 'vue-router'
   gap: 24px;
   flex-wrap: wrap;
   justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 500;
 }
 .cta-link{
   color: var(--color-text);

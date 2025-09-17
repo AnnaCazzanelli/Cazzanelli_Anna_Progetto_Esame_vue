@@ -71,8 +71,9 @@ import { RouterLink } from 'vue-router'
 }
 .footer-link{
   text-decoration: none;
-  color: var(--color-text);
+  font-family: var(--font-body);
   font-weight: 500;
+  color: var(--color-text);
   transition: color .2s ease;
 }
 .footer-link:hover{ color: var(--color-hover); }

@@ -270,6 +270,7 @@ onMounted(() => {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
+  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
   backdrop-filter: saturate(120%) blur(2px);
   user-select: none;
 }
