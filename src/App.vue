@@ -15,7 +15,8 @@ const route = useRoute()
     <!-- Mostra CTA e Footer solo se non sei nella pagina Contatti -->
     <template v-if="route.name !== 'contacts'">
       <CtaSection />
-      <Footer />
+      
     </template>
+    <Footer />
   </div>
 </template>

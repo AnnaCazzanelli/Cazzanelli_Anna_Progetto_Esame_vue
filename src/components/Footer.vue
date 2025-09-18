@@ -19,16 +19,25 @@ import { RouterLink } from 'vue-router'
       </div>
         <!-- social destra (usa le tue icone) -->
         <div class="footer-social" aria-label="Social media">
-          <a href="https://www.linkedin.com/in/anna-cazzanelli-a193a6276/" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
-            <img src="/icone/icon-linkedin.svg" alt="" />
+      
+          <a href="mailto:anna.cazzanelli@example.com" target="_blank" rel="noopener" class="footer-link" aria-label="Email" title="Email">
+            <img src="/icone/icon-email.svg" alt="" />
           </a>
+
           <a href="https://www.instagram.com/annaredpan/" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
             <img src="/icone/icon-instagram.svg" alt="" />
           </a>
+
+             <a href="https://www.linkedin.com/in/anna-cazzanelli-a193a6276/" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+            <img src="/icone/icon-linkedin.svg" alt="" />
+          </a>
+          
           <a href="https://www.behance.net/cazzanellianna" target="_blank" rel="noopener" aria-label="Behance" title="Behance">
             <img src="/icone/icon-behance.svg" alt="" />
           </a>
-        </div>
+       
+       
+           </div>
       </div>
 
       <!-- riga bottom -->
