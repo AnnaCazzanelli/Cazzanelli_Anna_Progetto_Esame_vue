@@ -198,6 +198,7 @@ onMounted(() => {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right center;
+  transform: translateY(-8%);
 }
 
 .header-content-wrapper {
@@ -341,6 +342,15 @@ body.dark-mode .hero-image-container {
   background-image: url('/images/projects/copertina/project_darkmode.png');
 }
 
+@media (max-width: 1024px) and (min-width: 769px) {
+
+  /* Adattamento per tablet */
+  .hero-image-container {
+    background-position: right center;
+    transform: translateY(-10%);
+    opacity: 0.95;
+  }
+}
 /* --- Mobile --- */
 @media (max-width: 768px) {
   .project-grid {
