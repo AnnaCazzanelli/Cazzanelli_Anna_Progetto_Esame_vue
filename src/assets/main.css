@@ -147,7 +147,14 @@ link {
 .img-container {
   border-radius: var(--border-radius-card);
 }
+@media (max-width: 1024px) and (min-width: 769px) {
 
+  /* Adattamento per tablet */
+  h1 {
+    font-size: 40pt;
+    line-height: 62pt;
+  }
+}
 /* Adattamento per dispositivi mobili */
 @media (max-width: 768px) {
 
