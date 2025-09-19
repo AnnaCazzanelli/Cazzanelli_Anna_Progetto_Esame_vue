@@ -21,12 +21,10 @@ const CARD_GAP = 14
 const cardWidth     = ref(0)
 const visibleCount  = ref(1)
 
-/* computed per il disable (progetti) */
 const projMaxIndex      = computed(() => Math.max(0, (projects.value.length || 0) - visibleCount.value))
 const projPrevDisabled  = computed(() => projIndex.value <= 0)
 const projNextDisabled  = computed(() => projIndex.value >= projMaxIndex.value)
 
-/* ---- Firestore (Progetti) ---- */
 async function fetchProjects () {
   const q = query(
     collection(db, 'projects'),
@@ -41,7 +39,6 @@ async function fetchProjects () {
   }))
 }
 
-/* ---- Misure + movimento (Progetti) ---- */
 function measureCarousel () {
   const vp = projViewport.value
   const tr = projTrack.value
@@ -71,18 +68,14 @@ function nextProj () {
 }
 
 /* ---------------- Slider (Illustrazioni) ---------------- */
-/* Scorrimento a “snap” per card (larghezze variabili) */
 const illViewport   = ref(null)
 const illTrack      = ref(null)
-/* lista offset di snap (px) e indice corrente */
-const illSnaps      = ref([])   // es. [0, 210, 540, ...]
+const illSnaps      = ref([])
 const illSnapIndex  = ref(0)
 
-/* computed per il disable (illustrazioni) */
 const illPrevDisabled = computed(() => illSnapIndex.value <= 0)
 const illNextDisabled = computed(() => illSnapIndex.value >= Math.max(0, illSnaps.value.length - 1))
 
-/* ---- Firestore (Illustrazioni) ---- */
 async function fetchIllustrations () {
   const q = query(
     collection(db, 'illustrations'),
@@ -97,7 +90,6 @@ async function fetchIllustrations () {
   }))
 }
 
-/* ---- Misure + movimento (Illustrazioni) ---- */
 function measureIllCarousel () {
   const vp = illViewport.value
   const tr = illTrack.value
@@ -107,16 +99,11 @@ function measureIllCarousel () {
   const trackWidth = Math.round(tr.scrollWidth)
   const maxOffset  = Math.max(0, trackWidth - vpWidth)
 
-  // Calcola gli snap allineando la SINISTRA di ogni card al bordo sinistro del viewport,
-  // clampando per non superare maxOffset (ultime card consolidate allo stesso snap).
   const children = Array.from(tr.children)
   const rawSnaps = children.map(el => Math.min(el.offsetLeft, maxOffset))
-
-  // De-duplica e ordina (può capitare che più card mappino allo stesso maxOffset)
   const unique = [...new Set(rawSnaps)].sort((a, b) => a - b)
   illSnaps.value = unique
 
-  // Trova lo snap più vicino all’offset corrente (se già impostato)
   const current = illSnaps.value[illSnapIndex.value] ?? 0
   const nearestIndex = nearestSnapIndex(current, illSnaps.value)
   illSnapIndex.value = Math.min(nearestIndex, Math.max(0, illSnaps.value.length - 1))
@@ -162,7 +149,6 @@ onMounted(async () => {
     measureIllCarousel()
     onResize = () => { measureCarousel(); measureIllCarousel() }
     window.addEventListener('resize', onResize, { passive: true })
-    // rimesura dopo il layout delle immagini
     setTimeout(() => { measureCarousel(); measureIllCarousel() }, 120)
   } catch (e) {
     error.value = e?.message || String(e)
@@ -177,7 +163,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 
 <template>
   <main class="home" aria-labelledby="home-title">
-    <!-- ================= HERO (invariata) ================= -->
+    <!-- ================= HERO ================= -->
     <section class="hero" role="region" aria-labelledby="home-title">
       <article class="intro">
         <h1 id="home-title" class="title">Ciao</h1>
@@ -333,17 +319,18 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 <style scoped>
 /* ---------------- Base ---------------- */
 .home{
+  /* niente padding orizzontale qui: usiamo i container interni */
   padding-top: 8px;
   padding-bottom: 64px;
   background: var(--color-surface);
   color: var(--color-text);
 }
 
-/* 2 colonne SEMPRE (testo | mano) */
+/* ============= HERO ============= */
 .hero{
   max-width: 1280px;
-  margin-left: var(--margin-desktop);
-  margin-right: var(--margin-desktop);
+  margin-inline: auto;                       /* centrato ⇒ margini dx/sx uguali */
+  padding-inline: var(--margin-desktop);     /* spazio interno coerente */
   padding-top: 32px;
   padding-bottom: 56px;
   display: grid;
@@ -386,23 +373,20 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   opacity: .9;
 }
 
-/* CTA hero */
+/* CTA hero (resta identica) */
 .cta{
   display: inline-block;
-  padding: 14px 22px;
+  padding: 16px 28px;
   text-decoration: none;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   color: var(--color-text);
-  border: 1px solid var(--color-accent);
+  border: 1px solid currentColor;
   background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
-  transition: transform .08s ease, background-color .2s ease, box-shadow .2s ease;
+  transition: transform .08s ease, background-color .2s ease;
 }
-.cta:hover{
-  background-color: color-mix(in srgb, var(--color-accent) 82%, transparent);
-  box-shadow: 0 4px 18px rgba(0,0,0,.08);
-}
+.cta:hover{ background-color: var(--color-accent); color: var(--color-surface); }
 .cta:active{ transform: scale(.98); }
 .cta:focus-visible{ outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
@@ -413,14 +397,14 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   margin-top: -40px;
 }
 
+/* Responsività HERO */
 @media (min-width: 1400px){
   .hero{ grid-template-columns: 1.1fr clamp(360px, 38vw, 560px); }
   .hand-wrap{ width: clamp(360px, 38vw, 560px); margin-top: -30px; }
 }
 @media (max-width: 980px){
   .hero{
-    margin-left: var(--margin-mobile);
-    margin-right: var(--margin-mobile);
+    padding-inline: var(--margin-mobile);
     grid-template-columns: 1fr clamp(220px, 30vw, 320px);
     gap: 36px;
     padding-top: 28px;
@@ -449,16 +433,30 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   .hero{ transform: none !important; }
 }
 
-/* =================== SEZIONI CAROSELLO =================== */
+/* ============= SEZIONI CAROSELLO ============= */
+/* container centrato con margini simmetrici */
 .carousel-section-projects-carousel,
 .carousel-section-illustrations-carousel{
   max-width: 1280px;
-  margin-left: var(--margin-desktop);
-  margin-right: var(--margin-desktop);
+  margin-inline: auto;                   /* simmetria */
+  padding-inline: var(--margin-desktop); /* spazio orizzontale */
   padding-top: 80px;
   padding-bottom: 24px;
 }
 .carousel-section-projects-carousel{ border-top: 2px solid var(--color-accent); }
+
+/* Mobile: meno spazio tra riga e titolo nella sezione Progetti */
+@media (max-width: 600px){
+  .carousel-section-projects-carousel{
+    padding-top: 36px;                   /* ↓ rispetto a 80px */
+    padding-inline: var(--margin-mobile);
+  }
+}
+@media (max-width: 980px){
+  .carousel-section-illustrations-carousel{
+    padding-inline: var(--margin-mobile);
+  }
+}
 
 .section-title{
   margin-top: 20px;
@@ -466,6 +464,10 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   font-size: clamp(22px, 2.6vw, 32px);
   line-height: 1.2;
   color: var(--color-accent);
+}
+/* titolo più vicino alla riga su mobile */
+@media (max-width: 600px){
+  .section-title{ margin-top: 12px; }
 }
 
 .carousel-loading{ opacity: .7; }
@@ -490,12 +492,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 .nav:hover{ background-color: rgba(0,0,0,.06); }
 .nav:active{ transform: scale(.96); }
 .nav .icon{ width: 24px; height: 24px; display: block; pointer-events: none; }
-
-/* stato disabilitato come da Project Details */
-.nav:disabled{
-  opacity:.35;
-  cursor:not-allowed;
-}
+.nav:disabled{ opacity:.35; cursor:not-allowed; }
 
 /* Viewport/Track */
 .carousel-viewport{ overflow: hidden; }
@@ -505,7 +502,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   transition: transform .35s ease;
 }
 
-/* ---------- Card PROGETTO (bordo solo intorno all’immagine) ---------- */
+/* ---------- Card PROGETTO ---------- */
 .card{
   flex: 0 0 auto;
   width: 100%;
@@ -517,7 +514,6 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   flex-direction: column;
 }
 .card-frame{
-
   background: var(--color-surface);
   margin: 0;
   padding: 10px;
@@ -539,7 +535,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   color: var(--color-accent);
 }
 
-/* ---------- Card ILLUSTRAZIONE (larghezze variabili) ---------- */
+/* ---------- Card ILLUSTRAZIONE ---------- */
 .card-illustration{
   flex: 0 0 auto;
   border-radius: 0;
