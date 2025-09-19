@@ -1,7 +1,9 @@
-/*
- * Stili globali e variabili
- * Basati sul documento "Testo riassuntivo"
-*/
+/* === Tailwind (v4) === */
+@import "tailwindcss";
+
+/* =========================================================
+   Variabili e tema (invariato rispetto al tuo stile)
+   ========================================================= */
 :root {
   /* Colori - Light Mode */
   --color-surface-light: #FDFDFE;
@@ -15,26 +17,26 @@
   --color-accent-dark: #8C6CFF;
   --color-hover-dark: #7357D9;
 
-  /* Impostazioni di default (Light Mode) */
+  /* Default: Light Mode */
   --color-surface: var(--color-surface-light);
   --color-text: var(--color-text-light);
   --color-accent: var(--color-accent-light);
   --color-hover: var(--color-hover-dark);
 
-  /* Margini e spaziatura */
+  /* Spaziatura progetto */
   --margin-desktop: 40px;
   --margin-mobile: 20px;
 
-  /* Border Radius */
+  /* Raggi (li manteniamo perché usati in vari componenti) */
   --border-radius-btn: 8px;
   --border-radius-card: 12px;
-  
-  /*Font*/
+
+  /* Font */
   --font-heading:'Neue Kabel','Montserrat',sans-serif;
   --font-body:'Forma DJR Micro','Lato',sans-serif;
 }
 
-/* Attivazione della modalità scura */
+/* Attivazione Dark Mode (switch variabili) */
 body.dark-mode {
   --color-surface: var(--color-surface-dark);
   --color-text: var(--color-text-dark);
@@ -42,140 +44,145 @@ body.dark-mode {
   --color-hover: var(--color-hover-dark);
 }
 
-/* Stili di base per il corpo del sito */
-body {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  padding: 0 var(--margin-desktop);
-  margin: 0;
+/* =========================================================
+   Base: colori, tipografia
+   (Tailwind Preflight azzera i margini: qui fissiamo il nostro look)
+   ========================================================= */
+@layer base {
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    padding-inline: var(--margin-desktop);
+    margin: 0;
+  }
+
+  /* Titoli: family/weight/colore restano come nel progetto */
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+    font-style: normal;
+    font-weight: 900;
+    color: var(--color-accent);
+    margin: 0; /* evitiamo margini impliciti rimossi/gestiti da Tailwind */
+  }
+
+  h1 { font-size: 64pt; line-height: 77pt; }
+  h2 { font-size: 32pt; line-height: 42pt; }
+  h3 { font-size: 18pt; line-height: 27pt; }
+
+  /* Testi */
+  p, .link, .cat-badge, .tag {
+    font-family: var(--font-body);
+    color: var(--color-text);
+  }
+  p { font-size: 18pt; line-height: 27pt; }
+  .link { font-weight: 500; }
+  .cat-badge, .tag { font-weight: 400; }
 }
 
-/* Tipografia - Titoli */
-h1,
-h2,
-h3 {
-  font-family: var(--font-heading);
-  font-style: normal;
-  font-weight: 900;
-  color: var(--color-accent);
+/* =========================================================
+   Compat Layer: contenitore e spaziature coerenti tra pagine
+   ========================================================= */
+@layer components {
+  /* Contenitore centrale coerente (max 1200) */
+  .page-shell {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: var(--margin-desktop);
+  }
+  /* Spazio verticale standard per sezioni “principali” */
+  .section-gap {
+    padding-block: 48px;
+  }
+
+  /* Header layout desktop */
+  .header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 20px var(--margin-desktop);
+  }
+
+  /* Bottoni (stile progetto) */
+  .btn {
+    font-size: 18pt;
+    line-height: 22pt;
+    font-family: var(--font-body);
+    border-radius: var(--border-radius-btn);
+    border: 1px solid var(--color-text);
+    padding: 10px 20px;
+    display: inline-block;
+    text-decoration: none;
+    background-color: var(--color-accent);
+    color: var(--color-text);
+  }
+  .btn:hover {
+    background-color: var(--color-hover);
+    color: var(--color-surface);
+  }
+
+  /* Card/img container */
+  .card,
+  .img-container {
+    border-radius: var(--border-radius-card);
+  }
+
+  /* Spaziatura “pronta all’uso” per titoli */
+  .h1-space { margin: 56px 0 40px; }
+  .h2-space { margin: 24px 0 16px; }
 }
 
-h1 {
-  font-size: 64pt;
-  line-height: 77pt;
+@layer utilities {
+  /* Se vuoi applicare il padding globale direttamente al body via classi */
+  .body-pad-desktop { padding-inline: var(--margin-desktop); }
 }
 
-h2 {
-  font-size: 32pt;
-  line-height: 42pt;
-}
-
-h3 {
-  font-size: 18pt;
-  line-height: 27pt;
-}
-
-/* Tipografia - Paragrafi e testi */
-p {
-  font-family: var(--font-body);
-  font-size: 18pt;
-  line-height: 27pt;
-  color: var(--color-text);
-}
-link {
-  font-family: var(--font-body);
-  color: var(--color-text);
-  font-weight: 500;
-}
-
-.cat-badge,.tag{
-  font-family: var(--font-body);
-  font-weight: 400;
-}
-/* Layout dell'Header */
-.header {
-  display: flex;
-  justify-content: flex-end;
-  /* Allinea il menu a destra */
-  align-items: center;
-  padding: 20px var(--margin-desktop);
-}
-
-/* Stili per il menu di navigazione desktop */
+/* =========================================================
+   Navigazione desktop/mobile (come nel tuo progetto)
+   ========================================================= */
 .desktop-nav a {
   font-size: 16pt;
   line-height: 19pt;
-  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+  font-family: var(--font-body);
   font-weight: 700;
   text-decoration: none;
   color: var(--color-text);
   margin-left: 20px;
 }
+.desktop-nav a:hover { color: var(--color-hover); }
 
-.desktop-nav a:hover {
-  color: var(--color-hover);
-}
-
-/* Nasconde il menu mobile e l'icona hamburger su desktop */
 .menu-icon,
-.mobile-nav {
-  display: none;
-}
+.mobile-nav { display: none; }
 
-
-/* Stili per i bottoni */
-.btn {
-  font-size: 18pt;
-  line-height: 22pt;
-  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
-  border-radius: var(--border-radius-btn);
-  border: 1px solid var(--color-text);
-  padding: 10px 20px;
-  display: inline-block;
-  text-decoration: none;
-  background-color: var(--color-accent);
-  color: var(--color-text);
-}
-
-.btn:hover {
-  background-color: var(--color-hover);
-  color: var(--color-surface);
-}
-
-/* Stili per card e immagini */
-.card,
-.img-container {
-  border-radius: var(--border-radius-card);
-}
+/* =========================================================
+   Breakpoint Tablet (md~lg)
+   ========================================================= */
 @media (max-width: 1024px) and (min-width: 769px) {
+  /* Titolo più equilibrato su tablet (come richiesto) */
+  h1 { font-size: 40pt; line-height: 62pt; }
 
-  /* Adattamento per tablet */
-  h1 {
-    font-size: 40pt;
-    line-height: 62pt;
-  }
+  .page-shell { padding-inline: 32px; }
+  .header { padding: 20px 32px; }
 }
-/* Adattamento per dispositivi mobili */
+
+/* =========================================================
+   Mobile ≤ 768px
+   ========================================================= */
 @media (max-width: 768px) {
 
-  /* Layout dell'Header per mobile */
+  /* Header per mobile */
   .header {
     padding: 20px var(--margin-mobile);
     justify-content: flex-end;
   }
 
-  /* Nasconde il menu desktop e mostra l'icona hamburger */
-  .desktop-nav {
-    display: none;
-  }
-
+  /* Menu mobile */
+  .desktop-nav { display: none; }
   .menu-icon {
     display: block;
     cursor: pointer;
     position: relative;
     z-index: 1000;
   }
-
   .menu-icon span {
     display: block;
     width: 25px;
@@ -183,13 +190,10 @@ link {
     background-color: var(--color-text);
     margin: 5px 0;
   }
-
-  /* Stile del menu mobile a comparsa */
   .mobile-nav {
     position: fixed;
     top: 0;
     right: -100%;
-    /* Inizialmente fuori dallo schermo */
     width: 100%;
     height: 100vh;
     background-color: var(--color-surface);
@@ -200,12 +204,7 @@ link {
     transition: right 0.3s ease-in-out;
     z-index: 999;
   }
-
-  .mobile-nav.is-open {
-    right: 0;
-    /* Si sposta dentro lo schermo */
-  }
-
+  .mobile-nav.is-open { right: 0; }
   .mobile-nav a {
     font-size: 28pt;
     line-height: 36pt;
@@ -215,38 +214,17 @@ link {
     color: var(--color-text);
     margin: 15px 0;
   }
+  .mobile-nav a:hover { color: var(--color-hover); }
 
-  .mobile-nav a:hover {
-    color: var(--color-hover);
-  }
+  /* Spaziatura globale su mobile */
+  body { padding-inline: var(--margin-mobile); }
+  .page-shell { padding-inline: var(--margin-mobile); }
+  .section-gap { padding-block: 32px; }
 
-  /* Stili per il resto del sito su mobile */
-  body {
-    padding: 0 var(--margin-mobile);
-  }
-
-  h1 {
-    font-size: 40pt;
-    line-height: 48pt;
-  }
-
-  h2 {
-    font-size: 24pt;
-    line-height: 31pt;
-  }
-
-  h3 {
-    font-size: 20pt;
-    line-height: 26pt;
-  }
-
-  p {
-    font-size: 16pt;
-    line-height: 24pt;
-  }
-
-  .btn {
-    font-size: 16pt;
-    line-height: 19pt;
-  }
+  /* Tipografia mobile */
+  h1 { font-size: 40pt; line-height: 48pt; }
+  h2 { font-size: 24pt; line-height: 31pt; }
+  h3 { font-size: 20pt; line-height: 26pt; }
+  p  { font-size: 16pt; line-height: 24pt; }
+  .btn { font-size: 16pt; line-height: 19pt; }
 }
