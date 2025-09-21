@@ -1,38 +1,33 @@
-/* === Tailwind v4 === */
 @import "tailwindcss";
 
-/* =========================================================
-   Variabili globali (colori, font, spaziature)
-   ========================================================= */
+/* ======= TOKENS ======= */
 :root {
-  /* Colori - Light */
+  /* Light */
   --color-surface-light: #FDFDFE;
   --color-text-light: #1A1A1C;
   --color-accent-light: #7A5CFF;
-  --color-hover-light: #7357D9;
+  --color-hover-light: #6147D9;
 
-  /* Colori - Dark */
+  /* Dark */
   --color-surface-dark: #111113;
   --color-text-dark: #F2F2F5;
   --color-accent-dark: #8C6CFF;
   --color-hover-dark: #7357D9;
 
-  /* Default (Light) */
+  /* Default (come avevi: hover = dark) */
   --color-surface: var(--color-surface-light);
   --color-text: var(--color-text-light);
   --color-accent: var(--color-accent-light);
-  --color-hover: var(--color-hover-light);
+  --color-hover: var(--color-hover-dark);
 
-  /* Spaziature progetto */
   --margin-desktop: 40px;
   --margin-mobile: 20px;
 
-  /* Font */
   --font-heading: 'Neue Kabel', 'Montserrat', sans-serif;
   --font-body: 'Forma DJR Micro', 'Lato', sans-serif;
 }
 
-/* Dark mode: switch variabili */
+/* Dark mode */
 body.dark-mode {
   --color-surface: var(--color-surface-dark);
   --color-text: var(--color-text-dark);
@@ -40,492 +35,57 @@ body.dark-mode {
   --color-hover: var(--color-hover-dark);
 }
 
-/* =========================================================
-   Base tipografia e colori
-   ========================================================= */
-@layer base {
-
-  /* colore/sfondo e padding orizzontale globale */
-  body {
-    background-color: var(--color-surface);
-    color: var(--color-text);
-    padding-inline: var(--margin-desktop);
-    margin: 0;
-  }
-
-  /* Titoli */
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-heading);
-    font-style: normal;
-    font-weight: 900;
-    color: var(--color-accent);
-    margin: 0;
-  }
-
-  h1 {
-    font-size: 64pt;
-    line-height: 77pt;
-  }
-
-  h2 {
-    font-size: 32pt;
-    line-height: 42pt;
-  }
-
-  h3 {
-    font-size: 18pt;
-    line-height: 27pt;
-  }
-
-  /* Testi */
-  p,
-  .link,
-  .cat-badge,
-  .tag {
-    font-family: var(--font-body);
-    color: var(--color-text);
-  }
-
-  p {
-    font-size: 18pt;
-    line-height: 27pt;
-  }
-
-  .link {
-    font-weight: 500;
-  }
-
-  .tag,
-  .cat-badge {
-    font-weight: 400;
-  }
+/* ======= RGB (per bg-accent/… ecc.) ======= */
+:root {
+  --surface-rgb: 253 253 254;
+  --text-rgb: 26 26 28;
+  --accent-rgb: 122 92 255;
+  --hover-rgb: 115 87 217;
 }
 
-/* =========================================================
-   Utility semantiche (colori/spacing con variabili)
-   ========================================================= */
-/* Colori via CSS vars (usabili ovunque) */
-.text-text {
-  color: var(--color-text);
+body.dark-mode {
+  --surface-rgb: 17 17 19;
+  --text-rgb: 242 242 245;
+  --accent-rgb: 140 108 255;
+  --hover-rgb: 115 87 217;
 }
 
-.text-accent {
-  color: var(--color-accent);
-}
-
-.bg-surface {
+/* ======= BASE (come il tuo, non passa da @apply) ======= */
+body {
   background-color: var(--color-surface);
-}
-
-.bg-accent {
-  background-color: var(--color-accent);
-}
-
-.bg-hover {
-  background-color: var(--color-hover);
-}
-
-.border-text {
-  border-color: var(--color-text);
-}
-
-.border-accent {
-  border-color: var(--color-accent);
-}
-
-/* Padding orizzontale coerente con il progetto */
-.px-shell {
-  padding-inline: var(--margin-desktop);
-}
-
-.mx-shell {
-  margin-inline: var(--margin-desktop);
-}
-
-/* Versione mobile di body padding (verrà sovrascritta nel media query) */
-.body-pad-desktop {
-  padding-inline: var(--margin-desktop);
-}
-
-/* Contenitore centrato max 1280px + padding a variabile */
-.container-1280 {
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-inline: var(--margin-desktop);
-}
-
-/* Riga divisoria a tutta larghezza con colore brand */
-.hr-accent {
-  width: 100%;
-  height: 2px;
-  background-color: var(--color-accent);
-}
-
-/* Spaziature sezione verticali “standard” */
-.section-y-lg {
-  padding-block: 80px 24px;
-}
-
-.section-y {
-  padding-block: 48px;
-}
-
-.section-y-sm {
-  padding-block: 32px;
-}
-
-/* Titoli con spaziatura predefinita */
-.h1-space {
-  margin: 56px 0 40px;
-}
-
-.h2-space {
-  margin: 24px 0 16px;
-}
-
-/* Visually hidden (A11y) */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-/* =========================================================
-   Componenti base (header, bottoni, card, carosello)
-   ========================================================= */
-/* Header (desktop) */
-.header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 20px var(--margin-desktop);
-}
-
-/* Nav desktop */
-.desktop-nav a {
-  font-size: 16pt;
-  line-height: 19pt;
-  font-family: var(--font-body);
-  font-weight: 700;
-  text-decoration: none;
   color: var(--color-text);
-  margin-left: 20px;
-}
-
-.desktop-nav a:hover {
-  color: var(--color-hover);
-}
-
-/* Burger + nav mobile: nascosti su desktop */
-.menu-icon,
-.mobile-nav {
-  display: none;
-}
-
-/* CTA / Button base (usa i colori di progetto) */
-.btn,
-.tw-cta {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-  border: 1px solid var(--color-accent);
-  color: var(--color-text);
-  background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
-  padding: 14px 22px;
-  transition: transform .08s ease, background-color .2s ease, box-shadow .2s ease;
-}
-
-.btn:hover,
-.tw-cta:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 82%, transparent);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, .08);
-}
-
-.btn:active,
-.tw-cta:active {
-  transform: scale(.98);
-}
-
-.btn:focus-visible,
-.tw-cta:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 3px;
-}
-
-/* Icone (per frecce/carousel ecc.) */
-.tw-icon {
-  display: block;
-  width: 24px;
-  height: 24px;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* Bottoni circolari nav (prev/next) */
-.nav {
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color .2s, transform .1s;
-}
-
-.nav:hover {
-  background-color: rgba(0, 0, 0, .06);
-}
-
-.nav:active {
-  transform: scale(.96);
-}
-
-.nav:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
-
-/* Card progetto (layout coerente al tuo design) */
-.card {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 350px;
-  text-decoration: none;
-  color: inherit;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-frame {
-  background: var(--color-surface);
+  padding: 0 var(--margin-desktop);
   margin: 0;
-  padding: 10px;
-  display: grid;
-  place-items: center;
-}
-
-.card-frame img {
-  display: block;
-  width: 100%;
-  height: 220px;
-  object-fit: contain;
-  background-color: var(--color-surface);
-}
-
-.card-title {
-  margin: 12px 8px 0;
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-  color: var(--color-accent);
-}
-
-/* Card illustrazione */
-.card-illustration {
-  flex: 0 0 auto;
-  border-radius: 0;
-  background: var(--color-surface);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  display: grid;
-  place-items: center;
-  padding: 8px;
-}
-
-.card-illustration img {
-  height: 280px;
-  width: auto;
-  max-width: 520px;
-  object-fit: contain;
-  display: block;
-  background-color: var(--color-surface);
-}
-
-/* Carosello: viewport/track (gap = 14px) */
-.carousel-viewport {
-  overflow: hidden;
-}
-
-.carousel-track {
-  display: flex;
-  gap: 14px;
-  will-change: transform;
-  transition: transform .35s ease;
-}
-
-/* Griglia “prev | viewport | next” (senza valori arbitrari) */
-.carousel-grid {
-  display: grid;
-  grid-template-columns: 48px 1fr 48px;
-  align-items: center;
-  gap: 8px;
-}
-
-/* CTA “Scopri di più” */
-.cta-see-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 15px;
   font-family: var(--font-body);
-  text-decoration: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-style: normal;
+  font-weight: 900;
   color: var(--color-accent);
-  opacity: .9;
-  transition: opacity .2s ease, color .2s ease;
 }
 
-.cta-see-all:hover {
-  color: var(--color-hover);
+h1 {
+  font-size: 64pt;
+  line-height: 77pt;
 }
 
-.cta-see-all .icon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  display: block;
+h2 {
+  font-size: 32pt;
+  line-height: 42pt;
 }
 
-/* =========================================================
-   Responsive (tablet e mobile)
-   ========================================================= */
-@media (max-width: 1024px) and (min-width: 769px) {
-
-  /* Tablet: h1 più equilibrato (richiesta tua) */
-  h1 {
-    font-size: 40pt;
-    line-height: 62pt;
-  }
-
-  .container-1280 {
-    padding-inline: 32px;
-  }
-
-  .header {
-    padding: 20px 32px;
-  }
+h3 {
+  font-size: 18pt;
+  line-height: 27pt;
 }
 
-@media (max-width: 980px) {
-
-  /* Immagini illustrazioni: stessa altezza su tablet */
-  .card-illustration img {
-    height: 280px;
-  }
-}
-
-@media (max-width: 768px) {
-
-  /* Header mobile */
-  .header {
-    padding: 20px var(--margin-mobile);
-    justify-content: flex-end;
-  }
-
-  /* Burger */
-  .desktop-nav {
-    display: none;
-  }
-
-  .menu-icon {
-    display: block;
-    cursor: pointer;
-    position: relative;
-    z-index: 1000;
-  }
-
-  .menu-icon span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background-color: var(--color-text);
-    margin: 5px 0;
-  }
-
-  /* Menu mobile overlay */
-  .mobile-nav {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 100%;
-    height: 100vh;
-    background-color: var(--color-surface);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: right .3s ease-in-out;
-    z-index: 999;
-  }
-
-  .mobile-nav.is-open {
-    right: 0;
-  }
-
-  .mobile-nav a {
-    font-size: 28pt;
-    line-height: 36pt;
-    font-family: var(--font-body);
-    font-weight: 700;
-    text-decoration: none;
-    color: var(--color-text);
-    margin: 15px 0;
-  }
-
-  .mobile-nav a:hover {
-    color: var(--color-hover);
-  }
-
-  /* Spaziatura globale mobile */
-  body {
-    padding-inline: var(--margin-mobile);
-  }
-
-  .container-1280 {
-    padding-inline: var(--margin-mobile);
-  }
-
-  .section-y {
-    padding-block: 32px;
-  }
-
-  /* Tipografia mobile */
-  h1 {
-    font-size: 40pt;
-    line-height: 48pt;
-  }
-
-  h2 {
-    font-size: 24pt;
-    line-height: 31pt;
-  }
-
-  h3 {
-    font-size: 20pt;
-    line-height: 26pt;
-  }
-
-  p {
-    font-size: 16pt;
-    line-height: 24pt;
-  }
-
-  /* Illustrazioni più compatte su mobile */
-  .card-illustration img {
-    height: 240px;
-  }
+p {
+  font-family: var(--font-body);
+  font-size: 18pt;
+  line-height: 27pt;
+  color: var(--color-text);
 }

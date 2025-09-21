@@ -5,24 +5,34 @@ import { RouterLink } from 'vue-router'
 
 <template>
   <section
-    class="cta"
     role="region"
     aria-labelledby="cta-title"
+    class="relative mx-auto grid place-content-center justify-items-center gap-6
+           px-4 py-6 md:px-8 md:py-10
+           bg-surface text-text
+           border-t-2 border-[var(--color-accent)]
+           min-h-[clamp(260px,32vh,420px)] md:min-h-[clamp(220px,40vh,360px)]"
   >
     <h2 id="cta-title" class="sr-only">Contatti</h2>
 
-    <p>Per lavori su commissione, collaborazioni o altro...</p>
+    <p class="cta-text m-0 text-center opacity-90">
+      Per lavori su commissione, collaborazioni o altro...
+    </p>
 
+    <!-- Bottone principale -->
     <RouterLink
       to="/contacts"
-      class="cta-btn"
+      class="cta-btn inline-block px-7 py-4 font-bold leading-none
+             text-[18px] border border-[var(--color-accent)] no-underline
+             transition-[transform,background-color,color] duration-200"
       aria-label="Vai alla pagina contatti"
       title="Contattami"
     >
       Contattami ora
     </RouterLink>
 
-    <div class="cta-links" aria-label="Link rapidi">
+    <!-- Link secondari -->
+    <div class="flex flex-wrap justify-center gap-6 font-medium">
       <a
         href="mailto:info@example.com"
         class="cta-link"
@@ -32,11 +42,21 @@ import { RouterLink } from 'vue-router'
         Email <span class="sr-only"> – apri il client di posta</span>
       </a>
 
-      <RouterLink to="/projects" class="cta-link" aria-label="Vai alla sezione progetti" title="Vai alla sezione progetti">
+      <RouterLink
+        to="/projects"
+        class="cta-link"
+        aria-label="Vai alla sezione progetti"
+        title="Vai alla sezione progetti"
+      >
         Progetti <span class="sr-only"> – scopri i miei lavori</span>
       </RouterLink>
 
-      <RouterLink to="/illustrations" class="cta-link" aria-label="Vai alla sezione illustrazioni" title="Vai alla sezione illustrazioni">
+      <RouterLink
+        to="/illustrations"
+        class="cta-link"
+        aria-label="Vai alla sezione illustrazioni"
+        title="Vai alla sezione illustrazioni"
+      >
         Illustrazioni <span class="sr-only"> – esplora le mie tavole</span>
       </RouterLink>
     </div>
@@ -44,85 +64,42 @@ import { RouterLink } from 'vue-router'
 </template>
 
 <style scoped>
-/* ---- Accessibilità ---- */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+.cta-text {
+  font-size: clamp(16px, 1.4vw, 18px) !important;
+  line-height: 1.7;
   white-space: nowrap;
-  border: 0;
+}
+@media (min-width: 768px) {
+  .cta-text { white-space: normal; }
 }
 
-/* ---- Layout base ---- */
-.cta{
-  position: relative;
-  margin: 0 auto;
-
-  /* padding simmetrico così il centro visivo è realmente nel mezzo */
-  padding: 32px 24px;
-
-  /* bordo superiore (quello inferiore lo mette il footer) */
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  border-top: 2px solid var(--color-accent);
-
-  /* centro TUTTO dentro la sezione */
-  display: grid;
-  place-content: center;     /* <-- centra verticalmente e orizzontalmente il gruppo */
-  justify-items: center;     /* allinea gli elementi al centro */
-  gap: 24px;
-
-  /* altezza minima così si percepisce il centro tra le due linee */
-  min-height: clamp(260px, 32vh, 420px);
-}
-
-/* Testo descrittivo: un filo di respiro sopra al bottone */
-.cta p{
-  margin: 0 0 10px;
-  font-size: 18px;
-  line-height: 1.6;
-}
-
-/* Bottone principale */
-.cta-btn{
-  display: inline-block;
-  padding: 16px 28px;
-  font-weight: 700;
-  font-size: 18px;
-  text-decoration: none;
-  border: 1px solid currentColor;
+.cta-btn {
   background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
-  color: inherit;
-  transition: transform .08s ease, background-color .2s ease;
+  color: var(--color-text);
 }
-.cta-btn:hover{ background-color: var(--color-accent); color: var(--color-surface); }
-.cta-btn:active{ transform: scale(.98); }
-.cta-btn:focus-visible{ outline: 3px solid var(--color-accent); outline-offset: 3px; }
+.cta-btn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-surface);
+}
+.cta-btn:active { transform: scale(.98); }
+.cta-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
 /* Link secondari */
-.cta-links{
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  justify-content: center;
-  font-family: var(--font-body);
-  font-weight: 500;
-}
-.cta-link{
+.cta-link {
   color: var(--color-text);
   text-decoration: none;
   border-bottom: 1px solid currentColor;
   padding-bottom: 2px;
+  transition: color .2s ease, border-color .2s ease;
 }
-.cta-link:hover{ color: var(--color-hover); }
+.cta-link:hover {
+  color: var(--color-hover);
+  border-color: var(--color-hover);
+}
 
-/* ---- Mobile ---- */
-@media (max-width: 768px){
-  .cta{ padding: 24px 16px; min-height: clamp(220px, 40vh, 360px); }
-  .cta-btn{ font-size: 16px; padding: 14px 24px; }
+/* Accessibilità */
+.sr-only {
+  position:absolute!important;
+  width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
 </style>

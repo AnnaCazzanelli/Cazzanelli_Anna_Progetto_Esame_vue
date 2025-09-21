@@ -6,13 +6,13 @@ import { ref, computed, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
 import { db } from '@/firebase/config'
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
 
-/* ---------------- State ---------------- */
+/* stato */
 const loading = ref(true)
 const error = ref(null)
-const projects = ref([])        // max 4 elementi
-const illustrations = ref([])   // max 6 elementi
+const projects = ref([])
+const illustrations = ref([])
 
-/* ---------------- Slider (Progetti) ---------------- */
+/* slider progetti */
 const projViewport = ref(null)
 const projTrack   = ref(null)
 const projIndex   = ref(0)
@@ -33,10 +33,7 @@ async function fetchProjects () {
     limit(4)
   )
   const snap = await getDocs(q)
-  projects.value = snap.docs.map(d => ({
-    firestoreId: d.id,
-    ...d.data()
-  }))
+  projects.value = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }))
 }
 
 function measureCarousel () {
@@ -60,14 +57,10 @@ function applyTransform () {
   const step = cardWidth.value + CARD_GAP
   tr.style.transform = `translateX(${-projIndex.value * step}px)`
 }
-function prevProj () {
-  if (!projPrevDisabled.value) { projIndex.value -= 1; applyTransform() }
-}
-function nextProj () {
-  if (!projNextDisabled.value) { projIndex.value += 1; applyTransform() }
-}
+function prevProj () { if (!projPrevDisabled.value) { projIndex.value -= 1; applyTransform() } }
+function nextProj () { if (!projNextDisabled.value) { projIndex.value += 1; applyTransform() } }
 
-/* ---------------- Slider (Illustrazioni) ---------------- */
+/* slider illustrazioni */
 const illViewport   = ref(null)
 const illTrack      = ref(null)
 const illSnaps      = ref([])
@@ -84,10 +77,7 @@ async function fetchIllustrations () {
     limit(6)
   )
   const snap = await getDocs(q)
-  illustrations.value = snap.docs.map(d => ({
-    firestoreId: d.id,
-    ...d.data()
-  }))
+  illustrations.value = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }))
 }
 
 function measureIllCarousel () {
@@ -126,20 +116,10 @@ function applyIllTransform () {
   const offset = illSnaps.value[illSnapIndex.value] || 0
   tr.style.transform = `translateX(${-offset}px)`
 }
-function prevIll () {
-  if (!illPrevDisabled.value) {
-    illSnapIndex.value -= 1
-    applyIllTransform()
-  }
-}
-function nextIll () {
-  if (!illNextDisabled.value) {
-    illSnapIndex.value += 1
-    applyIllTransform()
-  }
-}
+function prevIll () { if (!illPrevDisabled.value) { illSnapIndex.value -= 1; applyIllTransform() } }
+function nextIll () { if (!illNextDisabled.value) { illSnapIndex.value += 1; applyIllTransform() } }
 
-/* ---- Lifecycle ---- */
+/* lifecycle */
 let onResize
 onMounted(async () => {
   try {
@@ -157,19 +137,38 @@ onMounted(async () => {
   }
 })
 onBeforeUnmount(() => window.removeEventListener('resize', onResize))
-watch(projects,        async () => { await nextTick(); measureCarousel() })
-watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
+watch(projects,      async () => { await nextTick(); measureCarousel() })
+watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
 </script>
 
 <template>
-  <main class="home" aria-labelledby="home-title">
-    <!-- ================= HERO ================= -->
-    <section class="hero" role="region" aria-labelledby="home-title">
-      <article class="intro">
-        <h1 id="home-title" class="title">Ciao</h1>
-        <h2 class="subtitle">Sono Anna Cazzanelli</h2>
-        <h3 class="role">Digital Designer &amp; Illustratrice</h3>
-        <p class="payoff">Se vuoi saperne di più di me</p>
+  <main class="bg-surface text-text pt-2 pb-16">
+    <!-- HERO -->
+    <section
+      class="hero mx-auto max-w-[1280px] px-desktop pt-8 pb-14 grid items-center gap-14"
+      role="region"
+      aria-labelledby="home-title"
+    >
+      <article class="min-w-0">
+        <h1
+          id="home-title"
+          class="title m-0 text-accent font-extrabold leading-[1.06] whitespace-nowrap mb-[clamp(36px,4.2vw,72px)]"
+        >
+          Ciao
+        </h1>
+
+        <!-- H2 bold -->
+        <h2 class="subtitle m-0 mb-[10px] font-bold leading-[1.22] whitespace-nowrap text-accent">
+          Sono Anna Cazzanelli
+        </h2>
+
+        <!-- H3 regular (400) -->
+        <h3 class="role m-0 mb-[22px] font-normal leading-[1.28] whitespace-nowrap text-accent opacity-95">
+          Digital Designer &amp; Illustratrice
+        </h3>
+
+        <p class="payoff mt-2 mb-4 opacity-90">Se vuoi saperne di più di me</p>
+
         <RouterLink
           to="/about"
           class="cta"
@@ -180,27 +179,26 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
         </RouterLink>
       </article>
 
-      <div class="hand-wrap" aria-hidden="true">
+      <div class="hand-wrap justify-self-end -mt-10" aria-hidden="true">
         <Handwave :canvas-width="900" :canvas-height="900" />
       </div>
     </section>
 
-    <!-- ================= CAROSELLO PROGETTI ================= -->
-    <section class="carousel-section-projects-carousel" role="region" aria-labelledby="projects-title">
-      <h2 id="projects-title" class="section-title">Alcuni progetti di Digital Design</h2>
+    <!-- PROGETTI -->
+    <section
+      class="mx-auto max-w-[1280px] px-desktop pt-20 pb-6 accent-divider"
+      role="region"
+      aria-labelledby="projects-title"
+    >
+      <h2 id="projects-title" class="section-title mt-5 mb-20 text-accent">
+        Alcuni progetti di Digital Design
+      </h2>
 
-      <div v-if="loading" class="carousel-loading" role="status" aria-live="polite">Caricamento…</div>
-      <p v-else-if="error" class="carousel-error" role="alert">{{ error }}</p>
+      <div v-if="loading" class="opacity-70" role="status" aria-live="polite">Caricamento…</div>
+      <p v-else-if="error" class="text-[#b00020]" role="alert">{{ error }}</p>
 
-      <div v-else class="carousel-wrap" aria-label="Carosello progetti selezionati">
-        <button
-          class="nav prev"
-          type="button"
-          @click="prevProj"
-          :disabled="projPrevDisabled"
-          aria-label="Progetto precedente"
-          title="Precedente"
-        >
+      <div v-else class="grid grid-cols-[48px_1fr_48px] items-center gap-2" aria-label="Carosello progetti selezionati">
+        <button class="nav" type="button" @click="prevProj" :disabled="projPrevDisabled" aria-label="Progetto precedente" title="Precedente">
           <img src="/icone/icon-prev.svg" class="icon" alt="" />
         </button>
 
@@ -215,30 +213,19 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
               :title="`Apri progetto: ${p.title || 'Senza titolo'}`"
             >
               <figure class="card-frame" aria-label="Anteprima progetto">
-                <img
-                  :src="p.img || p.main_image"
-                  :alt="p.title ? `Anteprima progetto: ${p.title}` : 'Anteprima progetto'"
-                  loading="lazy"
-                />
+                <img :src="p.img || p.main_image" :alt="p.title ? `Anteprima progetto: ${p.title}` : 'Anteprima progetto'" loading="lazy" />
               </figure>
               <h3 class="card-title">{{ p.title || 'Senza titolo' }}</h3>
             </RouterLink>
           </div>
         </div>
 
-        <button
-          class="nav next"
-          type="button"
-          @click="nextProj"
-          :disabled="projNextDisabled"
-          aria-label="Prossimo progetto"
-          title="Successivo"
-        >
+        <button class="nav" type="button" @click="nextProj" :disabled="projNextDisabled" aria-label="Prossimo progetto" title="Successivo">
           <img src="/icone/icon-next.svg" class="icon" alt="" />
         </button>
       </div>
 
-      <div class="section-cta-projects">
+      <div class="section-cta-projects -mt-10 flex justify-end">
         <RouterLink
           to="/projects"
           class="cta-see-all"
@@ -251,22 +238,15 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
       </div>
     </section>
 
-    <!-- ================= CAROSELLO ILLUSTRAZIONI ================= -->
-    <section class="carousel-section-illustrations-carousel" role="region" aria-labelledby="illustrations-title">
-      <h2 id="illustrations-title" class="section-title">Alcune illustrazioni</h2>
+    <!-- ILLUSTRAZIONI -->
+    <section class="mx-auto max-w-[1280px] px-desktop pt-20 pb-6" role="region" aria-labelledby="illustrations-title">
+      <h2 id="illustrations-title" class="section-title mt-5 mb-20 text-accent">Alcune illustrazioni</h2>
 
-      <div v-if="loading" class="carousel-loading" role="status" aria-live="polite">Caricamento…</div>
-      <p v-else-if="error" class="carousel-error" role="alert">{{ error }}</p>
+      <div v-if="loading" class="opacity-70" role="status" aria-live="polite">Caricamento…</div>
+      <p v-else-if="error" class="text-[#b00020]" role="alert">{{ error }}</p>
 
-      <div v-else class="carousel-wrap" aria-label="Carosello illustrazioni selezionate">
-        <button
-          class="nav prev"
-          type="button"
-          @click="prevIll"
-          :disabled="illPrevDisabled"
-          aria-label="Illustrazione precedente"
-          title="Precedente"
-        >
+      <div v-else class="grid grid-cols-[48px_1fr_48px] items-center gap-2" aria-label="Carosello illustrazioni selezionate">
+        <button class="nav" type="button" @click="prevIll" :disabled="illPrevDisabled" aria-label="Illustrazione precedente" title="Precedente">
           <img src="/icone/icon-prev.svg" class="icon" alt="" />
         </button>
 
@@ -280,28 +260,17 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
               :aria-label="`Apri illustrazione: ${i.title || i.firestoreId}`"
               :title="`Apri illustrazione: ${i.title || 'Senza titolo'}`"
             >
-              <img
-                :src="i.img || i.main_image"
-                :alt="i.title ? `Anteprima illustrazione: ${i.title}` : 'Anteprima illustrazione'"
-                loading="lazy"
-              />
+              <img :src="i.img || i.main_image" :alt="i.title ? `Anteprima illustrazione: ${i.title}` : 'Anteprima illustrazione'" loading="lazy" />
             </RouterLink>
           </div>
         </div>
 
-        <button
-          class="nav next"
-          type="button"
-          @click="nextIll"
-          :disabled="illNextDisabled"
-          aria-label="Prossima illustrazione"
-          title="Successivo"
-        >
+        <button class="nav" type="button" @click="nextIll" :disabled="illNextDisabled" aria-label="Prossima illustrazione" title="Successivo">
           <img src="/icone/icon-next.svg" class="icon" alt="" />
         </button>
       </div>
 
-      <div class="section-cta-projects">
+      <div class="section-cta-projects -mt-10 flex justify-end">
         <RouterLink
           to="/illustrations"
           class="cta-see-all"
@@ -317,174 +286,65 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 </template>
 
 <style scoped>
-/* ---------------- Base ---------------- */
-.home{
-  /* niente padding orizzontale qui: usiamo i container interni */
-  padding-top: 8px;
-  padding-bottom: 64px;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-/* ============= HERO ============= */
+/* HERO grid */
 .hero{
-  max-width: 1280px;
-  margin-inline: auto;                       /* centrato ⇒ margini dx/sx uguali */
-  padding-inline: var(--margin-desktop);     /* spazio interno coerente */
-  padding-top: 32px;
-  padding-bottom: 56px;
   display: grid;
   grid-template-columns: 1.2fr clamp(300px, 36vw, 520px);
-  align-items: center;
-  gap: 56px;
-  transform: translateY(-32px);
   scroll-margin-top: 80px;
 }
-.intro{ min-width: 0; }
-
-.title{
-  margin: 0 0 10px 0;
-  color: var(--color-accent);
-  font-weight: 800;
-  line-height: 1.03;
-  white-space: nowrap;
-  font-size: clamp(140px, 17vw, 400px);
-}
-.subtitle{
-  margin: 0 0 6px 0;
-  font-weight: 700;
-  line-height: 1.18;
-  white-space: nowrap;
-  font-size: clamp(20px, 3.4vw, 44px);
-  letter-spacing: .2px;
-}
-.role{
-  margin: 0 0 18px 0;
-  font-weight: 500;
-  line-height: 1.24;
-  white-space: nowrap;
-  font-size: clamp(18px, 2.8vw, 34px);
-  opacity: .95;
-}
-.payoff{
-  margin: 8px 0 16px 0;
-  font-size: clamp(16px, 1.4vw, 18px);
-  line-height: 1.65;
-  opacity: .9;
-}
-
-/* CTA hero (resta identica) */
-.cta{
-  display: inline-block;
-  padding: 16px 28px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1;
-  color: var(--color-text);
-  border: 1px solid currentColor;
-  background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
-  transition: transform .08s ease, background-color .2s ease;
-}
-.cta:hover{ background-color: var(--color-accent); color: var(--color-surface); }
-.cta:active{ transform: scale(.98); }
-.cta:focus-visible{ outline: 3px solid var(--color-accent); outline-offset: 3px; }
-
-/* Colonna mano */
-.hand-wrap{
-  width: clamp(300px, 36vw, 520px);
-  justify-self: end;
-  margin-top: -40px;
-}
-
-/* Responsività HERO */
 @media (min-width: 1400px){
   .hero{ grid-template-columns: 1.1fr clamp(360px, 38vw, 560px); }
-  .hand-wrap{ width: clamp(360px, 38vw, 560px); margin-top: -30px; }
 }
-@media (max-width: 980px){
+@media (max-width: 1024px){
   .hero{
+    grid-template-columns: 1fr clamp(240px, 32vw, 360px);
+    gap: 40px;
     padding-inline: var(--margin-mobile);
-    grid-template-columns: 1fr clamp(220px, 30vw, 320px);
-    gap: 36px;
-    padding-top: 28px;
-    padding-bottom: 44px;
-    transform: translateY(-18px);
     scroll-margin-top: 72px;
   }
-  .title{ font-size: clamp(110px, 16vw, 260px); }
-  .subtitle{ font-size: clamp(19px, 3.1vw, 36px); }
-  .role{ font-size: clamp(17px, 2.4vw, 30px); }
-  .hand-wrap{ width: clamp(220px, 30vw, 320px); }
 }
 @media (max-width: 600px){
   .hero{
-    grid-template-columns: 1fr clamp(180px, 28vw, 240px);
-    gap: 24px;
-    transform: translateY(-10px);
+    grid-template-columns: 1fr clamp(200px, 34vw, 260px);
+    gap: 26px;
     scroll-margin-top: 64px;
   }
-  .title{ font-size: clamp(88px, 18vw, 200px); }
-  .subtitle{ font-size: clamp(18px, 4.0vw, 28px); }
-  .role{ font-size: clamp(16px, 3.4vw, 24px); }
-  .hand-wrap{ width: clamp(180px, 28vw, 240px); }
-}
-@media (prefers-reduced-motion: reduce){
-  .hero{ transform: none !important; }
 }
 
-/* ============= SEZIONI CAROSELLO ============= */
-/* container centrato con margini simmetrici */
-.carousel-section-projects-carousel,
-.carousel-section-illustrations-carousel{
-  max-width: 1280px;
-  margin-inline: auto;                   /* simmetria */
-  padding-inline: var(--margin-desktop); /* spazio orizzontale */
-  padding-top: 80px;
-  padding-bottom: 24px;
-}
-.carousel-section-projects-carousel{ border-top: 2px solid var(--color-accent); }
+/* tipografia hero */
+.title{ font-size: clamp(140px, 17vw, 400px); }
+.subtitle{ font-size: clamp(20px, 3.4vw, 44px); letter-spacing: .2px; font-weight: 700; } /* bold */
+.role{ font-size: clamp(18px, 2.8vw, 34px); font-weight: 400; } /* regular */
+.payoff{ font-size: clamp(16px, 1.4vw, 18px); line-height: 1.7; }
 
-/* Mobile: meno spazio tra riga e titolo nella sezione Progetti */
+/* tuning hero specifico per mobile */
 @media (max-width: 600px){
-  .carousel-section-projects-carousel{
-    padding-top: 36px;                   /* ↓ rispetto a 80px */
-    padding-inline: var(--margin-mobile);
+  .subtitle{
+    margin-bottom: 4px;
+    line-height: 1.16;
   }
-}
-@media (max-width: 980px){
-  .carousel-section-illustrations-carousel{
-    padding-inline: var(--margin-mobile);
+  .role{
+    margin-bottom: 12px;
+    line-height: 1.18;
+  }
+  .payoff{
+    white-space: nowrap;    /* non va mai a capo */
   }
 }
 
-.section-title{
-  margin-top: 20px;
-  margin-bottom: 80px;
-  font-size: clamp(22px, 2.6vw, 32px);
-  line-height: 1.2;
-  color: var(--color-accent);
-}
-/* titolo più vicino alla riga su mobile */
-@media (max-width: 600px){
-  .section-title{ margin-top: 12px; }
-}
+/* colonna immagine */
+.hand-wrap{ width: clamp(300px, 36vw, 520px); }
+@media (min-width: 1400px){ .hand-wrap{ width: clamp(360px, 38vw, 560px); margin-top: -30px; } }
+@media (max-width: 1024px){ .hand-wrap{ width: clamp(240px, 32vw, 360px); } }
+@media (max-width: 600px){ .hand-wrap{ width: clamp(200px, 34vw, 260px); margin-top: 50px; margin-right: -10px; } }
 
-.carousel-loading{ opacity: .7; }
-.carousel-error{ color: #b00020; }
+/* divider accent */
+.accent-divider{ border-top: 2px solid var(--color-accent); }
 
-.carousel-wrap{
-  display: grid;
-  grid-template-columns: 48px 1fr 48px; /* prev | viewport | next */
-  align-items: center;
-  gap: 8px;
-}
-
-/* Bottoni prev/next */
+/* slider */
 .nav{
   width: 48px; height: 48px;
-  border: none; border-radius: 50%;
-  background: transparent;
+  border: none; background: transparent;
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: background-color .2s, transform .1s;
@@ -493,8 +353,6 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 .nav:active{ transform: scale(.96); }
 .nav .icon{ width: 24px; height: 24px; display: block; pointer-events: none; }
 .nav:disabled{ opacity:.35; cursor:not-allowed; }
-
-/* Viewport/Track */
 .carousel-viewport{ overflow: hidden; }
 .carousel-track{
   display: flex; gap: 14px;
@@ -502,7 +360,7 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   transition: transform .35s ease;
 }
 
-/* ---------- Card PROGETTO ---------- */
+/* card progetto */
 .card{
   flex: 0 0 auto;
   width: 100%;
@@ -534,11 +392,14 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
   text-align: center;
   color: var(--color-accent);
 }
+/* hover accent -> hover sulla card intera */
+.card:hover .card-title{
+  color: var(--color-hover);
+}
 
-/* ---------- Card ILLUSTRAZIONE ---------- */
+/* card illustrazione */
 .card-illustration{
   flex: 0 0 auto;
-  border-radius: 0;
   background: var(--color-surface);
   overflow: hidden;
   text-decoration: none;
@@ -558,25 +419,55 @@ watch(illustrations,   async () => { await nextTick(); measureIllCarousel() })
 @media (max-width: 980px){ .card-illustration img{ height: 280px; } }
 @media (max-width: 600px){ .card-illustration img{ height: 240px; } }
 
-/* CTA "Scopri di più" */
-.section-cta-projects{
-  margin-top: -40px;
-  display: flex;
-  justify-content: flex-end;
+/* CTA hero */
+.cta{
+  display: inline-block;
+  padding: 16px 28px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-text);
+  border: 1px solid var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+  transition: transform .08s ease, background-color .2s ease, color .2s ease;
 }
+.cta:hover{ background-color: var(--color-accent); color: var(--color-surface); }
+.cta:active{ transform: scale(.98); }
+.cta:focus-visible{ outline: 3px solid var(--color-accent); outline-offset: 3px; }
+
+/* CTA "Scopri di più" */
 .cta-see-all{
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-weight: 600;
   font-size: 15px;
-  font-family: 'Forma DJR Micro', 'Lato', sans-serif;
+  font-family: var(--font-body);
   text-decoration: none;
   color: var(--color-accent);
   opacity: .9;
-  transition: opacity .2s ease;
+  transition: opacity .2s ease, color .2s ease;
   margin-top: 80px;
+  white-space: nowrap;
 }
 .cta-see-all:hover{ color: var(--color-hover); }
-.cta-see-all .icon{ width: 24px; height: 24px; flex-shrink: 0; display: block; }
+.cta-see-all .icon{
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* titolo sezione */
+.section-title{ font-size: clamp(22px, 2.6vw, 32px); line-height: 1.2; }
+
+/* SOLO MOBILE: titoli slideshow centrati */
+@media (max-width: 600px){
+  .section-title{
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 </style>

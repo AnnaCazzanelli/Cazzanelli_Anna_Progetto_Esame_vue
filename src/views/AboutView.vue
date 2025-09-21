@@ -3,19 +3,30 @@ import { RouterLink } from 'vue-router'
 </script>
 
 <template>
-  <main class="about-page" aria-labelledby="about-title">
-    <!-- Sezione introduttiva -->
-    <section class="intro" role="region" aria-labelledby="about-title">
-      <!-- Immagine/ritratto decorativa: cambia con dark-mode -->
-      <div
-        class="portrait"
-        aria-hidden="true"
-        role="img"
-      ></div>
+  <!-- padding Y simmetrico su tutte le view -->
+  <main
+    class="bg-surface text-text py-12 px-mobile md:px-desktop"
+    aria-labelledby="about-title"
+  >
+    <!-- Intro (niente margin-bottom: usa solo il padding del main) -->
+    <section
+      class="mx-auto max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-7 md:gap-[72px] items-start"
+      role="region"
+      aria-labelledby="about-title"
+    >
+      <!-- Ritratto -->
+      <div class="portrait" aria-hidden="true" role="img"></div>
 
       <!-- Testo -->
-      <article class="bio">
-        <h1 id="about-title" class="title">About me</h1>
+      <article class="bio max-w-[68ch]">
+        <!-- mobile più piccolo + no wrap; da md in su torna al clamp -->
+        <h1
+          id="about-title"
+          class="m-0 mb-4 text-accent leading-[1.1] whitespace-nowrap
+         text-[28px] xs:text-[30px] sm:text-[36px] md:text-[clamp(32px,4vw,48px)]"
+        >
+          About me
+        </h1>
 
         <p>
           Ciao! Sono Anna Cazzanelli, illustratrice e digital designer.<br>
@@ -40,90 +51,48 @@ import { RouterLink } from 'vue-router'
         </p>
       </article>
     </section>
-
   </main>
 </template>
 
 <style scoped>
-/* ---- A11y ---- */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+/* Accessibilità */
+.sr-only{
+  position:absolute!important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
-/* ---- Layout base ---- */
-.about-page {
-  padding: 48px var(--margin-desktop) 112px;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-/* Sezione intro: due colonne con lo stesso gap di ProjectDetails (72px) */
-.intro {
-  display: grid;
-  grid-template-columns: 1fr 1fr;      /* immagine a sx, testo a dx */
-  gap: 72px;                           /* ← come nelle colonne SX/DX di ProjectDetails */
-  align-items: start;
-  max-width: 1200px;
-  margin: 0 auto 80px;
-}
-
-/* Ritratto dimensionato come le hero (h = 600px, immagine contain) */
-.portrait {
+/* Ritratto: gestione immagine + dark mode + altezze */
+.portrait{
   width: 100%;
-  height: 600px;                       /* ← stessa altezza delle hero di Projects/Illustrations */
+  height: 600px;
   background-image: url('/images/about/about_lightmode.png');
-  background-size: contain;            /* come le hero */
+  background-size: contain;
   background-repeat: no-repeat;
-  background-position: top left;    /* allineato a sinistra, centrato verticalmente */
+  background-position: top left;
   border: 1px solid var(--color-surface);
   background-color: var(--color-surface);
 }
-
-/* Testo */
-.bio {
-  max-width: 68ch;
-  
-}
-.title {
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1.1;
-  margin: 0 0 16px;
-  color: var(--color-accent);
-}
-.bio p {
-  font-size: clamp(16px, 1.05vw, 18px);
-  line-height: 1.85;
-  margin: 0 0 16px;
-  color: var(--color-text);
-}
-
-
-
-/* Dark mode: cambia immagine ritratto */
-body.dark-mode .portrait {
+body.dark-mode .portrait{
   background-image: url('/images/about/about_darkmode.png');
 }
+@media (max-width: 900px){
+  .portrait{
+    height: 320px;
+    background-position: center;
+  }
+}
 
-/* ---- Mobile ---- */
-@media (max-width: 900px) {
-  .intro {
-    grid-template-columns: 1fr;       /* immagine sopra, testo sotto */
-    gap: 28px;                        /* gap più compatto su mobile */
-  }
-  .portrait {
-    height: 320px;                    /* hero un po’ più bassa su mobile */
-    background-position: center;      /* centrata */
-  }
-  .about-page {
-    padding: 32px var(--margin-mobile) 96px;
-  }
+/* Tipografia paragrafi: batte p{} globali */
+.bio p{
+  margin: 0 0 16px;
+  color: var(--color-text);
+  font-size: clamp(16px, 1.05vw, 18px);
+  line-height: 1.85;
+}
+
+/* Utility per padding orizzontale coerente con il resto del sito */
+:global(.px-mobile){ padding-left: var(--margin-mobile); padding-right: var(--margin-mobile); }
+@media (min-width: 768px){
+  :global(.px-desktop){ padding-left: var(--margin-desktop); padding-right: var(--margin-desktop); }
 }
 </style>
