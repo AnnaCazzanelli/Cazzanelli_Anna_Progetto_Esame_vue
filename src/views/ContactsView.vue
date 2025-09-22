@@ -141,7 +141,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     </h2>
 
     <p class="form-lead">
-      Compila il form qui sotto, ti risponderò il prima possibile!
+      Compila il form qui sotto, ti contatterò al più presto.
     </p>
 
     <!-- Messaggi stato -->
@@ -151,7 +151,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       role="status"
       aria-live="polite"
     >
-      ✅ Messaggio inviato, grazie! Ti risponderò il prima possibile.
+      ✅ Messaggio inviato, grazie! ti contatterò al più presto.
     </p>
 
     <p v-if="errorMsg" class="form-error" role="alert">
