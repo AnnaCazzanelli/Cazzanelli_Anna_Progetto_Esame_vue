@@ -1,28 +1,30 @@
 @import "tailwindcss";
 
-/* ======= TOKENS ======= */
+/* Tokens principali */
 :root {
-  /* Light */
+  /* Colori chiari */
   --color-surface-light: #FDFDFE;
   --color-text-light: #1A1A1C;
   --color-accent-light: #7A5CFF;
   --color-hover-light: #6147D9;
 
-  /* Dark */
+  /* Colori scuri */
   --color-surface-dark: #111113;
   --color-text-dark: #F2F2F5;
   --color-accent-dark: #8C6CFF;
   --color-hover-dark: #7357D9;
 
-  /* Default (come avevi: hover = dark) */
+  /* Variabili di default */
   --color-surface: var(--color-surface-light);
   --color-text: var(--color-text-light);
   --color-accent: var(--color-accent-light);
   --color-hover: var(--color-hover-dark);
 
+  /* Margini layout */
   --margin-desktop: 40px;
   --margin-mobile: 20px;
 
+  /* Font */
   --font-heading: 'Neue Kabel', 'Montserrat', sans-serif;
   --font-body: 'Forma DJR Micro', 'Lato', sans-serif;
 }
@@ -35,7 +37,7 @@ body.dark-mode {
   --color-hover: var(--color-hover-dark);
 }
 
-/* ======= RGB (per bg-accent/… ecc.) ======= */
+/* Variabili RGB per sfondi/transizioni */
 :root {
   --surface-rgb: 253 253 254;
   --text-rgb: 26 26 28;
@@ -50,7 +52,7 @@ body.dark-mode {
   --hover-rgb: 115 87 217;
 }
 
-/* ======= BASE (come il tuo, non passa da @apply) ======= */
+/* Stili base */
 body {
   background-color: var(--color-surface);
   color: var(--color-text);
@@ -59,6 +61,7 @@ body {
   font-family: var(--font-body);
 }
 
+/* Titoli */
 h1,
 h2,
 h3 {
@@ -83,6 +86,7 @@ h3 {
   line-height: 27pt;
 }
 
+/* Paragrafi */
 p {
   font-family: var(--font-body);
   font-size: 18pt;

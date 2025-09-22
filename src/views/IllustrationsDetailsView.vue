@@ -5,17 +5,30 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { db } from '@/firebase/config'
 import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore'
 
+/* Routing */
 const route = useRoute()
 const router = useRouter()
 
+/* Stato base */
 const illustration = ref(null)
 const loading = ref(true)
 const notFound = ref(false)
 
-const orderedIds = ref([])
-const currentIndex = computed(() => orderedIds.value.indexOf(String(route.params.id || '')))
+/* ==========================================================================
+   Scroll iniziale
+   - Garantisce l’avvio view dall’inizio pagina
+   ========================================================================== */
+window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 
-async function fetchIllustration() {
+
+/* Navigazione sequenziale tra illustrazioni */
+const orderedIds = ref([])
+const currentIndex = computed(() =>
+  orderedIds.value.indexOf(String(route.params.id || ''))
+)
+
+/* Fetch illustrazione */
+async function fetchIllustration () {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 
   loading.value = true
@@ -23,11 +36,18 @@ async function fetchIllustration() {
   illustration.value = null
 
   const id = String(route.params.id || '').trim()
-  if (!id) { notFound.value = true; loading.value = false; return }
+  if (!id) {
+    notFound.value = true
+    loading.value = false
+    return
+  }
 
   try {
     const snap = await getDoc(doc(db, 'illustrations', id))
-    if (!snap.exists()) { notFound.value = true; return }
+    if (!snap.exists()) {
+      notFound.value = true
+      return
+    }
     illustration.value = { id: snap.id, ...snap.data() }
   } catch (e) {
     console.error('Errore nel recupero illustrazione:', e)
@@ -39,13 +59,15 @@ async function fetchIllustration() {
   }
 }
 
-async function fetchOrderedIdsOnce() {
+/* Fetch lista ordinata di id (una sola volta) */
+async function fetchOrderedIdsOnce () {
   if (orderedIds.value.length) return
   const q = query(collection(db, 'illustrations'), orderBy('order', 'asc'))
   const snap = await getDocs(q)
   orderedIds.value = snap.docs.map(d => d.id)
 }
 
+/* Palette categorie e stile pill */
 const CATEGORY_COLORS = {
   'Lavoro su commissione': { bg: '#ffe3e9', bd: '#ffa8c0', fg: '#7a1f3a' },
   'Progetto Personale':    { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
@@ -53,6 +75,7 @@ const CATEGORY_COLORS = {
   'Challenge Artistica':   { bg: '#f3e8ff', bd: '#d0b3ff', fg: '#4a1d7a' },
   Other:                   { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' }
 }
+
 const currentCategory = computed(() => {
   const raw = (illustration.value?.category || '').trim()
   if (/commissione/i.test(raw))   return 'Lavoro su commissione'
@@ -61,34 +84,42 @@ const currentCategory = computed(() => {
   if (/challenge/i.test(raw))     return 'Challenge Artistica'
   return raw in CATEGORY_COLORS ? raw : 'Other'
 })
+
 const pillStyle = computed(() => {
   const c = CATEGORY_COLORS[currentCategory.value] || CATEGORY_COLORS.Other
-  return { background: c.bg, border: `1px solid ${c.bd}`, color: c.fg }
+  return {
+    background: c.bg,
+    border: `1px solid ${c.bd}`,
+    color: c.fg
+  }
 })
 
+/* Testi accessibilità */
 const altText = computed(() =>
   illustration.value?.title
     ? `Illustrazione: ${illustration.value.title}`
     : 'Illustrazione'
 )
 
-function goPrev() {
+/* Navigazione prev/next */
+function goPrev () {
   if (currentIndex.value > 0) {
     const target = orderedIds.value[currentIndex.value - 1]
     router.push({ name: 'illustration-details', params: { id: target } })
   }
 }
-function goNext() {
+function goNext () {
   if (currentIndex.value >= 0 && currentIndex.value < orderedIds.value.length - 1) {
     const target = orderedIds.value[currentIndex.value + 1]
     router.push({ name: 'illustration-details', params: { id: target } })
   }
 }
-function onKeydown(e) {
-  if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev() }
+function onKeydown (e) {
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); goPrev() }
   if (e.key === 'ArrowRight') { e.preventDefault(); goNext() }
 }
 
+/* Lifecycle */
 onMounted(async () => {
   await Promise.all([fetchOrderedIdsOnce(), fetchIllustration()])
 })
@@ -97,27 +128,35 @@ watch(() => route.params.id, fetchIllustration)
 
 <template>
   <main class="page bg-surface text-text">
-    <!-- Loading -->
-    <div v-if="loading" class="loading text-center opacity-80 py-40" role="status" aria-live="polite">
+
+    <!-- Stato: loading -->
+    <div
+      v-if="loading"
+      class="loading text-center opacity-80 py-40"
+      role="status"
+      aria-live="polite"
+    >
       Caricamento illustrazione…
     </div>
 
-    <!-- Not Found -->
+    <!-- Stato: not found -->
     <div v-else-if="notFound" class="notfound text-center opacity-80 py-40">
       <p>Illustrazione non trovata.</p>
+
       <RouterLink to="/illustrations" class="back-link text-accent no-underline">
         Torna alla sezione illustrazioni
       </RouterLink>
     </div>
 
-    <!-- OK -->
+    <!-- Stato: ok -->
     <div v-else-if="illustration" class="container max-w-[1120px] mx-auto relative">
-      <!-- Back -->
+
+      <!-- Pulsante back -->
       <RouterLink
         to="/illustrations"
         class="back-btn absolute -top-[60px] left-0 w-12 h-12 bg-transparent inline-flex items-center justify-center no-underline transition
                hover:bg-black/5 dark:hover:bg-white/10 hover:scale-105 active:scale-95
-               focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]"
+               focus-visible:outline  focus-visible:outline-[var(--color-accent)]"
         aria-label="Torna alle illustrazioni"
         title="Torna alle illustrazioni"
       >
@@ -141,7 +180,7 @@ watch(() => route.params.id, fetchIllustration)
         <button
           class="nav w-12 h-12 bg-transparent inline-flex items-center justify-center transition
                  hover:bg-black/5 dark:hover:bg-white/10 hover:scale-105 active:scale-95
-                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]
+                 focus-visible:outline  focus-visible:outline-[var(--color-accent)]
                  disabled:opacity-35 disabled:hover:scale-100 disabled:hover:bg-transparent"
           type="button"
           :disabled="currentIndex <= 0"
@@ -149,7 +188,12 @@ watch(() => route.params.id, fetchIllustration)
           title="Illustrazione precedente"
           @click="goPrev"
         >
-          <img src="/icone/icon-prev.svg" alt="" aria-hidden="true" class="icon w-6 h-6 block pointer-events-none" />
+          <img
+            src="/icone/icon-prev.svg"
+            alt=""
+            aria-hidden="true"
+            class="icon w-6 h-6 block pointer-events-none"
+          />
         </button>
 
         <!-- Stage -->
@@ -166,7 +210,7 @@ watch(() => route.params.id, fetchIllustration)
         <button
           class="nav w-12 h-12 bg-transparent inline-flex items-center justify-center transition
                  hover:bg-black/5 dark:hover:bg-white/10 hover:scale-105 active:scale-95
-                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]
+                 focus-visible:outline  focus-visible:outline-[var(--color-accent)]
                  disabled:opacity-35 disabled:hover:scale-100 disabled:hover:bg-transparent"
           type="button"
           :disabled="currentIndex === orderedIds.length - 1"
@@ -174,7 +218,12 @@ watch(() => route.params.id, fetchIllustration)
           title="Illustrazione successiva"
           @click="goNext"
         >
-          <img src="/icone/icon-next.svg" alt="" aria-hidden="true" class="icon w-6 h-6 block pointer-events-none" />
+          <img
+            src="/icone/icon-next.svg"
+            alt=""
+            aria-hidden="true"
+            class="icon w-6 h-6 block pointer-events-none"
+          />
         </button>
       </section>
 
@@ -182,7 +231,9 @@ watch(() => route.params.id, fetchIllustration)
       <section class="meta grid gap-[72px] mt-4" aria-label="Dettagli illustrazione">
         <div class="col">
           <h3 class="text-accent">Data</h3>
-          <p v-if="illustration.year">{{ illustration.year }}</p>
+          <p v-if="illustration.year">
+            {{ illustration.year }}
+          </p>
 
           <h3 class="text-accent">Tipo di progetto</h3>
           <p>
@@ -192,14 +243,25 @@ watch(() => route.params.id, fetchIllustration)
           </p>
 
           <h3 class="text-accent">Tag</h3>
-          <ul v-if="illustration.tag?.length" class="tags" aria-label="Tag dell’illustrazione">
-            <li v-for="t in illustration.tag" :key="t" class="pill" :style="pillStyle">
+          <ul
+            v-if="illustration.tag?.length"
+            class="tags"
+            aria-label="Tag dell’illustrazione"
+          >
+            <li
+              v-for="t in illustration.tag"
+              :key="t"
+              class="pill"
+              :style="pillStyle"
+            >
               {{ t }}
             </li>
           </ul>
 
           <h3 class="text-accent">Tecnica (Tools)</h3>
-          <p v-if="illustration.tools">{{ illustration.tools }}</p>
+          <p v-if="illustration.tools">
+            {{ illustration.tools }}
+          </p>
         </div>
 
         <div class="col">
@@ -214,41 +276,109 @@ watch(() => route.params.id, fetchIllustration)
 </template>
 
 <style scoped>
-.sr-only{
-  position:absolute!important;
-  width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+/* Solo lettura per screen reader */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* Layout */
-.page{ padding:48px var(--margin-desktop) 112px; }
-@media (max-width:768px){ .page{ padding:32px var(--margin-mobile) 96px; } }
-
-.title{ font-size:clamp(32px,4.2vw,56px); line-height:1.1; margin:56px 0 40px; }
-
-/* Viewer */
-.viewer{ grid-template-columns: 48px 1fr 48px; }
-@media (max-width:768px){
-  .viewer{ grid-template-columns:1fr; gap:16px; margin-bottom:40px; }
-  .nav{ display:none; }
+/* Layout pagina */
+.page {
+  padding: 48px var(--margin-desktop) 112px;
+}
+@media (max-width: 768px) {
+  .page {
+    padding: 32px var(--margin-mobile) 96px;
+  }
 }
 
-.stage-img{
-  height:clamp(360px,62vh,720px);
-  max-height:80vh;
-  object-fit:contain;
-}
-@media (max-width:768px){
-  .stage{ min-height:300px; padding:8px 0; }
-  .stage-img{ width:100%; height:auto; max-height:70vh; }
+/* Titolo principale */
+.title {
+  font-size: clamp(32px, 4.2vw, 56px);
+  line-height: 1.1;
+  margin: 56px 0 40px;
 }
 
-/* Meta */
-.meta{ grid-template-columns:1fr 2fr; }
-@media (max-width:768px){ .meta{ grid-template-columns:1fr; gap:28px; } }
+/* Viewer: griglia 48px | 1fr | 48px */
+.viewer {
+  grid-template-columns: 48px 1fr 48px;
+}
+@media (max-width: 768px) {
+  .viewer {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .nav {
+    display: none; /* su mobile si usa lo scroll/pagina */
+  }
+}
 
-.meta h3{ font-size:clamp(20px,1.9vw,24px); margin:0 0 12px; color:var(--color-accent); }
-.desc, .meta .col p{ font-size:clamp(15px,1.05vw,18px); line-height:1.8; margin:0 0 14px; }
+/* Immagine principale */
+.stage-img {
+  height: clamp(360px, 62vh, 720px);
+  max-height: 80vh;
+  object-fit: contain;
+}
+@media (max-width: 768px) {
+  .stage {
+    min-height: 300px;
+    padding: 8px 0;
+  }
+  .stage-img {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+  }
+}
 
-.tags{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:0 0 14px; list-style:none; padding:0; }
-.pill{ padding:8px 12px; border-radius:999px; font-size:.95rem; font-family:var(--font-body); line-height:1; border:1px solid currentColor; }
+/* Metadati */
+.meta {
+  grid-template-columns: 1fr 2fr;
+}
+@media (max-width: 768px) {
+  .meta {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+.meta h3 {
+  font-size: clamp(20px, 1.9vw, 24px);
+  margin: 0 0 12px;
+  color: var(--color-accent);
+}
+
+.desc,
+.meta .col p {
+  font-size: clamp(15px, 1.05vw, 18px);
+  line-height: 1.8;
+  margin: 0 0 14px;
+}
+
+/* Tag e pill */
+.tags {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0 0 14px;
+  list-style: none;
+  padding: 0;
+}
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  line-height: 1;
+  border: 1px solid currentColor;
+}
 </style>

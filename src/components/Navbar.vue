@@ -2,11 +2,11 @@
 import { RouterLink } from 'vue-router'
 import { ref, watch, onMounted } from 'vue'
 
-/* Stato */
+/* Stato UI */
 const isMobileMenuOpen = ref(false)
 const isDarkMode = ref(false)
 
-/* Toggle menu mobile */
+/* Menu mobile */
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
@@ -14,37 +14,45 @@ const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
 }
 
-/* Toggle dark mode */
+/* Tema */
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
 }
 
-/* Gestione dark mode nel body */
-watch(isDarkMode, (newValue) => {
-  if (newValue) {
+/* Applica/rimuove classe tema sul <body> */
+watch(isDarkMode, (val) => {
+  if (val) {
     document.body.classList.add('dark-mode')
   } else {
     document.body.classList.remove('dark-mode')
   }
 })
 
-/* Ricorda la preferenza in localStorage */
+/* Ripristina preferenza tema */
 onMounted(() => {
-  const savedMode = localStorage.getItem('isDarkMode')
-  if (savedMode) {
-    isDarkMode.value = JSON.parse(savedMode)
+  const saved = localStorage.getItem('isDarkMode')
+  if (saved) {
+    isDarkMode.value = JSON.parse(saved)
   }
 })
 
-watch(isDarkMode, (newValue) => {
-  localStorage.setItem('isDarkMode', JSON.stringify(newValue))
-}, { deep: true })
+/* Persiste preferenza tema */
+watch(
+  isDarkMode,
+  (val) => {
+    localStorage.setItem('isDarkMode', JSON.stringify(val))
+  },
+  { deep: true }
+)
 </script>
 
 <template>
   <header class="header">
-    <!-- Menu desktop -->
-    <nav class="desktop-nav" aria-label="Navigazione principale">
+    <!-- Navigazione desktop -->
+    <nav
+      class="desktop-nav"
+      aria-label="Navigazione principale"
+    >
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/about">About</RouterLink>
       <RouterLink to="/projects">Progetti</RouterLink>
@@ -54,8 +62,9 @@ watch(isDarkMode, (newValue) => {
 
     <!-- Toggle tema -->
     <button
-      @click="toggleDarkMode"
       class="theme-toggle"
+      type="button"
+      @click="toggleDarkMode"
       aria-label="Cambia tema"
     >
       <img
@@ -71,13 +80,17 @@ watch(isDarkMode, (newValue) => {
     </button>
 
     <!-- Icona hamburger -->
-    <div class="menu-icon" @click="toggleMobileMenu" aria-label="Apri menu">
+    <div
+      class="menu-icon"
+      @click="toggleMobileMenu"
+      aria-label="Apri menu"
+    >
       <span></span>
       <span></span>
       <span></span>
     </div>
 
-    <!-- Menu mobile -->
+    <!-- Navigazione mobile -->
     <nav
       class="mobile-nav"
       :class="{ 'is-open': isMobileMenuOpen }"
@@ -93,7 +106,7 @@ watch(isDarkMode, (newValue) => {
 </template>
 
 <style scoped>
-/* Header layout */
+/* Header */
 .header {
   display: flex;
   justify-content: flex-end;
@@ -102,7 +115,7 @@ watch(isDarkMode, (newValue) => {
   border-bottom: 2px solid var(--color-accent);
 }
 
-/* Desktop nav */
+/* Nav desktop */
 .desktop-nav a {
   font-size: 16pt;
   line-height: 19pt;
@@ -149,7 +162,7 @@ watch(isDarkMode, (newValue) => {
   margin: 5px 0;
 }
 
-/* Mobile nav */
+/* Nav mobile (chiuso di default) */
 .mobile-nav {
   display: none;
 }

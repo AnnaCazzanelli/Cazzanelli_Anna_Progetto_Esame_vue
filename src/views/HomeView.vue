@@ -2,38 +2,52 @@
 import { RouterLink } from 'vue-router'
 import Handwave from '@/components/Handwave.vue'
 
-import { ref, computed, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
+import {ref,computed,onMounted,nextTick,onBeforeUnmount, watch} from 'vue'
+
 import { db } from '@/firebase/config'
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
 
-/* stato */
+/* Stato base */
 const loading = ref(true)
 const error = ref(null)
 const projects = ref([])
 const illustrations = ref([])
 
-/* slider progetti */
+/* ==========================================================================
+   Scroll iniziale
+   - Garantisce l’avvio view dall’inizio pagina
+   ========================================================================== */
+window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
+
+/* Slider progetti */
 const projViewport = ref(null)
-const projTrack   = ref(null)
-const projIndex   = ref(0)
+const projTrack = ref(null)
+const projIndex = ref(0)
 
 const CARD_GAP = 14
-const cardWidth     = ref(0)
-const visibleCount  = ref(1)
+const cardWidth = ref(0)
+const visibleCount = ref(1)
 
-const projMaxIndex      = computed(() => Math.max(0, (projects.value.length || 0) - visibleCount.value))
-const projPrevDisabled  = computed(() => projIndex.value <= 0)
-const projNextDisabled  = computed(() => projIndex.value >= projMaxIndex.value)
+const projMaxIndex = computed(() =>
+  Math.max(0, (projects.value.length || 0) - visibleCount.value)
+)
+const projPrevDisabled = computed(() => projIndex.value <= 0)
+const projNextDisabled = computed(() => projIndex.value >= projMaxIndex.value)
 
 async function fetchProjects () {
-  const q = query(
+  const q = 
+  query(
     collection(db, 'projects'),
     where('featured', '==', true),
     orderBy('priority', 'asc'),
     limit(4)
   )
   const snap = await getDocs(q)
-  projects.value = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }))
+  projects.value = snap.docs.map(d => ({
+    firestoreId: d.id,
+    ...d.data()
+  }))
 }
 
 function measureCarousel () {
@@ -42,42 +56,69 @@ function measureCarousel () {
   if (!vp || !tr) return
 
   const first = tr.querySelector('.card')
-  if (!first) { cardWidth.value = 0; visibleCount.value = 1; return }
+  if (!first) {
+    cardWidth.value = 0
+    visibleCount.value = 1
+    return
+  }
 
   cardWidth.value = Math.max(1, Math.round(first.getBoundingClientRect().width))
   const vpWidth = Math.max(1, Math.round(vp.getBoundingClientRect().width))
-  visibleCount.value = Math.max(1, Math.floor((vpWidth + CARD_GAP) / (cardWidth.value + CARD_GAP)))
+
+  visibleCount.value = Math.max(
+    1,
+    Math.floor((vpWidth + CARD_GAP) / (cardWidth.value + CARD_GAP))
+  )
 
   projIndex.value = Math.min(projIndex.value, projMaxIndex.value)
   applyTransform()
 }
+
 function applyTransform () {
   const tr = projTrack.value
   if (!tr) return
   const step = cardWidth.value + CARD_GAP
   tr.style.transform = `translateX(${-projIndex.value * step}px)`
 }
-function prevProj () { if (!projPrevDisabled.value) { projIndex.value -= 1; applyTransform() } }
-function nextProj () { if (!projNextDisabled.value) { projIndex.value += 1; applyTransform() } }
 
-/* slider illustrazioni */
-const illViewport   = ref(null)
-const illTrack      = ref(null)
-const illSnaps      = ref([])
-const illSnapIndex  = ref(0)
+function prevProj () {
+  if (!projPrevDisabled.value) {
+    projIndex.value -= 1
+    applyTransform()
+  }
+}
+
+function nextProj () {
+  if (!projNextDisabled.value) {
+    projIndex.value += 1
+    applyTransform()
+  }
+}
+
+/* Slider illustrazioni */
+const illViewport = ref(null)
+const illTrack = ref(null)
+const illSnaps = ref([])
+const illSnapIndex = ref(0)
 
 const illPrevDisabled = computed(() => illSnapIndex.value <= 0)
-const illNextDisabled = computed(() => illSnapIndex.value >= Math.max(0, illSnaps.value.length - 1))
+const illNextDisabled = computed(() =>
+  illSnapIndex.value >= Math.max(0, illSnaps.value.length - 1)
+)
 
 async function fetchIllustrations () {
-  const q = query(
+  const q = 
+  query(
     collection(db, 'illustrations'),
     where('featured', '==', true),
     orderBy('priority', 'asc'),
     limit(6)
   )
   const snap = await getDocs(q)
-  illustrations.value = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }))
+  illustrations.value = snap.docs.map(d => ({
+    firestoreId: d.id,
+    ...d.data()
+  }))
 }
 
 function measureIllCarousel () {
@@ -85,9 +126,9 @@ function measureIllCarousel () {
   const tr = illTrack.value
   if (!vp || !tr) return
 
-  const vpWidth    = Math.round(vp.clientWidth)
+  const vpWidth = Math.round(vp.clientWidth)
   const trackWidth = Math.round(tr.scrollWidth)
-  const maxOffset  = Math.max(0, trackWidth - vpWidth)
+  const maxOffset = Math.max(0, trackWidth - vpWidth)
 
   const children = Array.from(tr.children)
   const rawSnaps = children.map(el => Math.min(el.offsetLeft, maxOffset))
@@ -96,49 +137,88 @@ function measureIllCarousel () {
 
   const current = illSnaps.value[illSnapIndex.value] ?? 0
   const nearestIndex = nearestSnapIndex(current, illSnaps.value)
-  illSnapIndex.value = Math.min(nearestIndex, Math.max(0, illSnaps.value.length - 1))
+  illSnapIndex.value = Math.min(
+    nearestIndex,
+    Math.max(0, illSnaps.value.length - 1)
+  )
 
   applyIllTransform()
 }
-function nearestSnapIndex(value, snaps) {
+
+function nearestSnapIndex (value, snaps) {
   if (!snaps.length) return 0
   let best = 0
   let bestDist = Math.abs(snaps[0] - value)
   for (let i = 1; i < snaps.length; i++) {
     const d = Math.abs(snaps[i] - value)
-    if (d < bestDist) { best = i; bestDist = d }
+    if (d < bestDist) {
+      best = i
+      bestDist = d
+    }
   }
   return best
 }
+
 function applyIllTransform () {
   const tr = illTrack.value
   if (!tr || !illSnaps.value.length) return
   const offset = illSnaps.value[illSnapIndex.value] || 0
   tr.style.transform = `translateX(${-offset}px)`
 }
-function prevIll () { if (!illPrevDisabled.value) { illSnapIndex.value -= 1; applyIllTransform() } }
-function nextIll () { if (!illNextDisabled.value) { illSnapIndex.value += 1; applyIllTransform() } }
 
-/* lifecycle */
+function prevIll () {
+  if (!illPrevDisabled.value) {
+    illSnapIndex.value -= 1
+    applyIllTransform()
+  }
+}
+
+function nextIll () {
+  if (!illNextDisabled.value) {
+    illSnapIndex.value += 1
+    applyIllTransform()
+  }
+}
+
+/* Lifecycle */
 let onResize
+
 onMounted(async () => {
   try {
     await Promise.all([fetchProjects(), fetchIllustrations()])
     await nextTick()
     measureCarousel()
     measureIllCarousel()
-    onResize = () => { measureCarousel(); measureIllCarousel() }
+
+    onResize = () => {
+      measureCarousel()
+      measureIllCarousel()
+    }
+
     window.addEventListener('resize', onResize, { passive: true })
-    setTimeout(() => { measureCarousel(); measureIllCarousel() }, 120)
+
+    setTimeout(() => {
+      measureCarousel()
+      measureIllCarousel()
+    }, 120)
   } catch (e) {
     error.value = e?.message || String(e)
   } finally {
     loading.value = false
   }
 })
+
 onBeforeUnmount(() => window.removeEventListener('resize', onResize))
-watch(projects,      async () => { await nextTick(); measureCarousel() })
-watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
+
+watch(projects, async () => {
+  await nextTick()
+  measureCarousel()
+})
+
+watch(illustrations, async () => {
+  await nextTick()
+  measureIllCarousel()
+})
 </script>
 
 <template>
@@ -157,17 +237,21 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
           Ciao
         </h1>
 
-        <!-- H2 bold -->
-        <h2 class="subtitle m-0 mb-[10px] font-bold leading-[1.22] whitespace-nowrap text-accent">
+        <h2
+          class="subtitle m-0 mb-[10px] font-bold leading-[1.22] whitespace-nowrap text-accent"
+        >
           Sono Anna Cazzanelli
         </h2>
 
-        <!-- H3 regular (400) -->
-        <h3 class="role m-0 mb-[22px] font-normal leading-[1.28] whitespace-nowrap text-accent opacity-95">
+        <h3
+          class="role m-0 mb-[22px] font-normal leading-[1.28] whitespace-nowrap text-accent opacity-95"
+        >
           Digital Designer &amp; Illustratrice
         </h3>
 
-        <p class="payoff mt-2 mb-4 opacity-90">Se vuoi saperne di più di me</p>
+        <p class="payoff mt-2 mb-4 opacity-90">
+          Se vuoi saperne di più di me
+        </p>
 
         <RouterLink
           to="/about"
@@ -184,7 +268,7 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
       </div>
     </section>
 
-    <!-- PROGETTI -->
+    <!--  Carosello Progetti -->
     <section
       class="mx-auto max-w-[1280px] px-desktop pt-20 pb-6 accent-divider"
       role="region"
@@ -194,11 +278,32 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
         Alcuni progetti di Digital Design
       </h2>
 
-      <div v-if="loading" class="opacity-70" role="status" aria-live="polite">Caricamento…</div>
-      <p v-else-if="error" class="text-[#b00020]" role="alert">{{ error }}</p>
+      <div
+        v-if="loading"
+        class="opacity-70"
+        role="status"
+        aria-live="polite"
+      >
+        Caricamento…
+      </div>
 
-      <div v-else class="grid grid-cols-[48px_1fr_48px] items-center gap-2" aria-label="Carosello progetti selezionati">
-        <button class="nav" type="button" @click="prevProj" :disabled="projPrevDisabled" aria-label="Progetto precedente" title="Precedente">
+      <p v-else-if="error" class="text-[#b00020]" role="alert">
+        {{ error }}
+      </p>
+
+      <div
+        v-else
+        class="grid grid-cols-[48px_1fr_48px] items-center gap-2"
+        aria-label="Carosello progetti selezionati"
+      >
+        <button
+          class="nav"
+          type="button"
+          @click="prevProj"
+          :disabled="projPrevDisabled"
+          aria-label="Progetto precedente"
+          title="Precedente"
+        >
           <img src="/icone/icon-prev.svg" class="icon" alt="" />
         </button>
 
@@ -213,14 +318,28 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
               :title="`Apri progetto: ${p.title || 'Senza titolo'}`"
             >
               <figure class="card-frame" aria-label="Anteprima progetto">
-                <img :src="p.img || p.main_image" :alt="p.title ? `Anteprima progetto: ${p.title}` : 'Anteprima progetto'" loading="lazy" />
+                <img
+                  :src="p.img || p.main_image"
+                  :alt="p.title ? `Anteprima progetto: ${p.title}` : 'Anteprima progetto'"
+                  loading="lazy"
+                />
               </figure>
-              <h3 class="card-title">{{ p.title || 'Senza titolo' }}</h3>
+
+              <h3 class="card-title">
+                {{ p.title || 'Senza titolo' }}
+              </h3>
             </RouterLink>
           </div>
         </div>
 
-        <button class="nav" type="button" @click="nextProj" :disabled="projNextDisabled" aria-label="Prossimo progetto" title="Successivo">
+        <button
+          class="nav"
+          type="button"
+          @click="nextProj"
+          :disabled="projNextDisabled"
+          aria-label="Prossimo progetto"
+          title="Successivo"
+        >
           <img src="/icone/icon-next.svg" class="icon" alt="" />
         </button>
       </div>
@@ -238,15 +357,42 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
       </div>
     </section>
 
-    <!-- ILLUSTRAZIONI -->
-    <section class="mx-auto max-w-[1280px] px-desktop pt-20 pb-6" role="region" aria-labelledby="illustrations-title">
-      <h2 id="illustrations-title" class="section-title mt-5 mb-20 text-accent">Alcune illustrazioni</h2>
+    <!-- Carosello Illustrazioni -->
+    <section
+      class="mx-auto max-w-[1280px] px-desktop pt-20 pb-6"
+      role="region"
+      aria-labelledby="illustrations-title"
+    >
+      <h2 id="illustrations-title" class="section-title mt-5 mb-20 text-accent">
+        Alcune illustrazioni
+      </h2>
 
-      <div v-if="loading" class="opacity-70" role="status" aria-live="polite">Caricamento…</div>
-      <p v-else-if="error" class="text-[#b00020]" role="alert">{{ error }}</p>
+      <div
+        v-if="loading"
+        class="opacity-70"
+        role="status"
+        aria-live="polite"
+      >
+        Caricamento…
+      </div>
 
-      <div v-else class="grid grid-cols-[48px_1fr_48px] items-center gap-2" aria-label="Carosello illustrazioni selezionate">
-        <button class="nav" type="button" @click="prevIll" :disabled="illPrevDisabled" aria-label="Illustrazione precedente" title="Precedente">
+      <p v-else-if="error" class="text-[#b00020]" role="alert">
+        {{ error }}
+      </p>
+
+      <div
+        v-else
+        class="grid grid-cols-[48px_1fr_48px] items-center gap-2"
+        aria-label="Carosello illustrazioni selezionate"
+      >
+        <button
+          class="nav"
+          type="button"
+          @click="prevIll"
+          :disabled="illPrevDisabled"
+          aria-label="Illustrazione precedente"
+          title="Precedente"
+        >
           <img src="/icone/icon-prev.svg" class="icon" alt="" />
         </button>
 
@@ -260,12 +406,23 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
               :aria-label="`Apri illustrazione: ${i.title || i.firestoreId}`"
               :title="`Apri illustrazione: ${i.title || 'Senza titolo'}`"
             >
-              <img :src="i.img || i.main_image" :alt="i.title ? `Anteprima illustrazione: ${i.title}` : 'Anteprima illustrazione'" loading="lazy" />
+              <img
+                :src="i.img || i.main_image"
+                :alt="i.title ? `Anteprima illustrazione: ${i.title}` : 'Anteprima illustrazione'"
+                loading="lazy"
+              />
             </RouterLink>
           </div>
         </div>
 
-        <button class="nav" type="button" @click="nextIll" :disabled="illNextDisabled" aria-label="Prossima illustrazione" title="Successivo">
+        <button
+          class="nav"
+          type="button"
+          @click="nextIll"
+          :disabled="illNextDisabled"
+          aria-label="Prossima illustrazione"
+          title="Successivo"
+        >
           <img src="/icone/icon-next.svg" class="icon" alt="" />
         </button>
       </div>
@@ -286,141 +443,102 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
 </template>
 
 <style scoped>
-/* HERO grid */
-.hero{
+/* HERO layout */
+.hero {
   display: grid;
   grid-template-columns: 1.2fr clamp(300px, 36vw, 520px);
   scroll-margin-top: 80px;
 }
-@media (min-width: 1400px){
-  .hero{ grid-template-columns: 1.1fr clamp(360px, 38vw, 560px); }
+
+@media (min-width: 1400px) {
+  .hero {
+    grid-template-columns: 1.1fr clamp(360px, 38vw, 560px);
+  }
 }
-@media (max-width: 1024px){
-  .hero{
+
+@media (max-width: 1024px) {
+  .hero {
     grid-template-columns: 1fr clamp(240px, 32vw, 360px);
     gap: 40px;
     padding-inline: var(--margin-mobile);
     scroll-margin-top: 72px;
   }
 }
-@media (max-width: 600px){
-  .hero{
+
+@media (max-width: 600px) {
+  .hero {
     grid-template-columns: 1fr clamp(200px, 34vw, 260px);
     gap: 26px;
     scroll-margin-top: 64px;
   }
 }
 
-/* tipografia hero */
-.title{ font-size: clamp(140px, 17vw, 400px); }
-.subtitle{ font-size: clamp(20px, 3.4vw, 44px); letter-spacing: .2px; font-weight: 700; } /* bold */
-.role{ font-size: clamp(18px, 2.8vw, 34px); font-weight: 400; } /* regular */
-.payoff{ font-size: clamp(16px, 1.4vw, 18px); line-height: 1.7; }
+/* Tipografia hero */
+.title {
+  font-size: clamp(140px, 17vw, 400px);
+}
 
-/* tuning hero specifico per mobile */
-@media (max-width: 600px){
-  .subtitle{
+.subtitle {
+  font-size: clamp(20px, 3.4vw, 44px);
+  letter-spacing: 0.2px;
+  font-weight: 700;
+}
+
+.role {
+  font-size: clamp(18px, 2.8vw, 34px);
+  font-weight: 400;
+}
+
+.payoff {
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.7;
+}
+
+/* Tuning hero mobile */
+@media (max-width: 600px) {
+  .subtitle {
     margin-bottom: 4px;
     line-height: 1.16;
   }
-  .role{
+
+  .role {
     margin-bottom: 12px;
     line-height: 1.18;
   }
-  .payoff{
-    white-space: nowrap;    /* non va mai a capo */
+
+  .payoff {
+    white-space: nowrap;
   }
 }
 
-/* colonna immagine */
-.hand-wrap{ width: clamp(300px, 36vw, 520px); }
-@media (min-width: 1400px){ .hand-wrap{ width: clamp(360px, 38vw, 560px); margin-top: -30px; } }
-@media (max-width: 1024px){ .hand-wrap{ width: clamp(240px, 32vw, 360px); } }
-@media (max-width: 600px){ .hand-wrap{ width: clamp(200px, 34vw, 260px); margin-top: 50px; margin-right: -10px; } }
-
-/* divider accent */
-.accent-divider{ border-top: 2px solid var(--color-accent); }
-
-/* slider */
-.nav{
-  width: 48px; height: 48px;
-  border: none; background: transparent;
-  display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background-color .2s, transform .1s;
-}
-.nav:hover{ background-color: rgba(0,0,0,.06); }
-.nav:active{ transform: scale(.96); }
-.nav .icon{ width: 24px; height: 24px; display: block; pointer-events: none; }
-.nav:disabled{ opacity:.35; cursor:not-allowed; }
-.carousel-viewport{ overflow: hidden; }
-.carousel-track{
-  display: flex; gap: 14px;
-  will-change: transform;
-  transition: transform .35s ease;
+/* Dimensioni animazione hero su vari dispositivi */
+.hand-wrap {
+  width: clamp(300px, 36vw, 520px);
 }
 
-/* card progetto */
-.card{
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 350px;
-  text-decoration: none;
-  color: inherit;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-}
-.card-frame{
-  background: var(--color-surface);
-  margin: 0;
-  padding: 10px;
-  display: grid;
-  place-items: center;
-}
-.card-frame img{
-  display: block;
-  width: 100%;
-  height: 220px;
-  object-fit: contain;
-  background-color: var(--color-surface);
-}
-.card-title{
-  margin: 12px 8px 0;
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-  color: var(--color-accent);
-}
-/* hover accent -> hover sulla card intera */
-.card:hover .card-title{
-  color: var(--color-hover);
+@media (min-width: 1400px) {
+  .hand-wrap {
+    width: clamp(360px, 38vw, 560px);
+    margin-top: -30px;
+  }
 }
 
-/* card illustrazione */
-.card-illustration{
-  flex: 0 0 auto;
-  background: var(--color-surface);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  display: grid;
-  place-items: center;
-  padding: 8px;
+@media (max-width: 1024px) {
+  .hand-wrap {
+    width: clamp(240px, 32vw, 360px);
+  }
 }
-.card-illustration img{
-  height: 280px;
-  width: auto;
-  max-width: 520px;
-  object-fit: contain;
-  display: block;
-  background-color: var(--color-surface);
+
+@media (max-width: 600px) {
+  .hand-wrap {
+    width: clamp(200px, 34vw, 260px);
+    margin-top:95px;
+    margin-right: -40px;
+  }
 }
-@media (max-width: 980px){ .card-illustration img{ height: 280px; } }
-@media (max-width: 600px){ .card-illustration img{ height: 240px; } }
 
 /* CTA hero */
-.cta{
+.cta {
   display: inline-block;
   padding: 16px 28px;
   text-decoration: none;
@@ -430,14 +548,167 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
   color: var(--color-text);
   border: 1px solid var(--color-accent);
   background-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
-  transition: transform .08s ease, background-color .2s ease, color .2s ease;
+  transition:
+    transform 0.08s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
-.cta:hover{ background-color: var(--color-accent); color: var(--color-surface); }
-.cta:active{ transform: scale(.98); }
-.cta:focus-visible{ outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
-/* CTA "Scopri di più" */
-.cta-see-all{
+.cta:hover {
+  background-color: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.cta:active {
+  transform: scale(0.98);
+}
+
+.cta:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+
+/* Divider accent */
+.accent-divider {
+  border-top: 2px solid var(--color-accent);
+}
+
+/* Slider */
+/* Titolo sezione */
+.section-title {
+  font-size: clamp(22px, 2.6vw, 32px);
+  line-height: 1.2;
+}
+
+/* Mobile: titoli slideshow centrati */
+@media (max-width: 600px) {
+  .section-title {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+.nav {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+}
+
+.nav:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.nav:active {
+  transform: scale(0.96);
+}
+
+.nav .icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  pointer-events: none;
+}
+
+.nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.carousel-viewport {
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 14px;
+  will-change: transform;
+  transition: transform 0.35s ease;
+}
+
+/* Card progetto */
+.card {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 350px;
+  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-frame {
+  background: var(--color-surface);
+  margin: 0;
+  padding: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.card-frame img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  background-color: var(--color-surface);
+}
+
+.card-title {
+  margin: 12px 8px 0;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-accent);
+}
+
+.card:hover .card-title {
+  color: var(--color-hover);
+}
+
+/* Card illustrazione */
+.card-illustration {
+  flex: 0 0 auto;
+  background: var(--color-surface);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.card-illustration img {
+  height: 280px;
+  width: auto;
+  max-width: 520px;
+  object-fit: contain;
+  display: block;
+  background-color: var(--color-surface);
+}
+
+@media (max-width: 980px) {
+  .card-illustration img {
+    height: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .card-illustration img {
+    height: 240px;
+  }
+}
+
+/* CTA “Scopri di più” */
+.cta-see-all {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -446,28 +717,24 @@ watch(illustrations, async () => { await nextTick(); measureIllCarousel() })
   font-family: var(--font-body);
   text-decoration: none;
   color: var(--color-accent);
-  opacity: .9;
-  transition: opacity .2s ease, color .2s ease;
+  opacity: 0.9;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease;
   margin-top: 80px;
   white-space: nowrap;
 }
-.cta-see-all:hover{ color: var(--color-hover); }
-.cta-see-all .icon{
+
+.cta-see-all:hover {
+  color: var(--color-hover);
+}
+
+.cta-see-all .icon {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
   display: block;
 }
 
-/* titolo sezione */
-.section-title{ font-size: clamp(22px, 2.6vw, 32px); line-height: 1.2; }
 
-/* SOLO MOBILE: titoli slideshow centrati */
-@media (max-width: 600px){
-  .section-title{
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
 </style>

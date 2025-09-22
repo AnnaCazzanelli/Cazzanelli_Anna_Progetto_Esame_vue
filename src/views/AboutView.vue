@@ -1,25 +1,36 @@
 <script setup>
+/**
+ * Routing
+ * - Import per eventuali link interni dalla pagina About.
+ */
 import { RouterLink } from 'vue-router'
+/* ==========================================================================
+   Scroll iniziale
+   - Garantisce l’avvio view dall’inizio pagina
+   ========================================================================== */
+window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
 </script>
 
 <template>
-  <!-- padding Y simmetrico su tutte le view -->
+  <!-- Contenitore pagina -->
   <main
     class="bg-surface text-text py-12 px-mobile md:px-desktop"
     aria-labelledby="about-title"
   >
-    <!-- Intro -->
+    <!--Sezione introduttiva  -->
     <section
       class="mx-auto max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-7 md:gap-[72px] items-start"
       role="region"
       aria-labelledby="about-title"
     >
-      <!-- Ritratto -->
+      <!-- Immagine di presentazione -->
       <div class="portrait" aria-hidden="true" role="img"></div>
 
-      <!-- Testo -->
+      <!-- Testo bio -->
       <article class="bio max-w-[68ch]">
-        <!-- Desktop segue il clamp; su tablet/mobile forziamo 40pt/28pt come le altre hero -->
+
+        <!--Titolo principale (H1) -->
         <h1
           id="about-title"
           class="m-0 mb-4 text-accent leading-[1.1] whitespace-nowrap
@@ -29,12 +40,16 @@ import { RouterLink } from 'vue-router'
           About me
         </h1>
 
+        <!-- Paragrafi descrittivi -->
+       
+
         <p>
-          Ciao! Sono Anna Cazzanelli, illustratrice e digital designer.<br>
+          Ciao! Sono Anna Cazzanelli, illustratrice e digital designer.<br />
           Dopo il diploma al Liceo Artistico <strong><em>A. Vittoria</em></strong> di Trento e la
-          laurea triennale in Nuove Tecnologie dell’Arte all’Accademia di Belle Arti <strong><em>G. Cignaroli</em></strong> di Verona,
-          attualmente sto completando il biennio magistrale in Digital Design &amp;
-          Communication alla <strong><em>LABA </em></strong> Libera Accademia di Belle Arti di Brescia.
+          laurea triennale in Nuove Tecnologie dell’Arte all’Accademia di Belle Arti
+          <strong><em>G. Cignaroli</em></strong> di Verona, attualmente sto completando il
+          biennio magistrale in Digital Design &amp; Communication alla
+          <strong><em>LABA </em></strong> Libera Accademia di Belle Arti di Brescia.
         </p>
 
         <p>
@@ -46,9 +61,9 @@ import { RouterLink } from 'vue-router'
 
         <p>
           In ogni progetto cerco di coniugare creatività e funzionalità, dando vita
-          a soluzioni visive efficaci e coerenti con il contesto. <br> Credo che il design
-          sia soprattutto un linguaggio capace di raccontare storie, costruire esperienze
-          e generare connessioni autentiche.
+          a soluzioni visive efficaci e coerenti con il contesto.<br />
+          Credo che il design sia soprattutto un linguaggio capace di raccontare
+          storie, costruire esperienze e generare connessioni autentiche.
         </p>
       </article>
     </section>
@@ -56,14 +71,26 @@ import { RouterLink } from 'vue-router'
 </template>
 
 <style scoped>
-/* Accessibilità */
-.sr-only{
-  position:absolute!important; width:1px; height:1px; padding:0; margin:-1px;
-  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+/* ==========================================================================
+   Accessibilità
+   - Classe di utilità per elementi solo-visivi mantenendo la semantica.
+   ========================================================================== */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* Ritratto: gestione immagine + dark mode + altezze */
-.portrait{
+/* ==========================================================================
+  Immagine di presentazione 
+   ========================================================================== */
+.portrait {
   width: 100%;
   height: 600px;
   background-image: url('/images/about/about_lightmode.png');
@@ -73,37 +100,64 @@ import { RouterLink } from 'vue-router'
   border: 1px solid var(--color-surface);
   background-color: var(--color-surface);
 }
-body.dark-mode .portrait{
+
+/* Variante dark:  */
+body.dark-mode .portrait {
   background-image: url('/images/about/about_darkmode.png');
 }
-@media (max-width: 900px){
-  .portrait{
+
+/* Riduzione altezza e ricentraggio su viewport stretti */
+@media (max-width: 900px) {
+  .portrait {
     height: 320px;
     background-position: center;
   }
 }
 
-/* Tipografia paragrafi */
-.bio p{
+/* ==========================================================================
+   Tipografia contenuti
+   - Misura e interlinea pensate per lettura prolungata su desktop e mobile.
+   ========================================================================== */
+.bio p {
   margin: 0 0 16px;
   color: var(--color-text);
   font-size: clamp(16px, 1.05vw, 18px);
   line-height: 1.85;
 }
 
-/* === H1 come le altre hero === */
-@media (max-width: 1024px) and (min-width: 769px){
-  /* Tablet: 40pt/50pt */
-  #about-title{ font-size: 40pt; line-height: 50pt; }
-}
-@media (max-width: 768px){
-  /* Mobile: 28pt/36pt e permetti a capo */
-  #about-title{ font-size: 28pt; line-height: 36pt; white-space: normal; }
+/* ==========================================================================
+   Titolo H1 (responsivo)
+   - Tablet: crescita moderata per bilanciare con due colonne.
+   - Mobile: riduzione dimensione e sblocco a capo per evitare overflow.
+   ========================================================================== */
+@media (max-width: 1024px) and (min-width: 769px) {
+  #about-title {
+    font-size: 40pt;
+    line-height: 50pt;
+  }
 }
 
-/* Utility per padding orizzontale coerente con il resto del sito */
-:global(.px-mobile){ padding-left: var(--margin-mobile); padding-right: var(--margin-mobile); }
-@media (min-width: 768px){
-  :global(.px-desktop){ padding-left: var(--margin-desktop); padding-right: var(--margin-desktop); }
+@media (max-width: 768px) {
+  #about-title {
+    font-size: 28pt;
+    line-height: 36pt;
+    white-space: normal;
+  }
+}
+
+/* ==========================================================================
+   Utility di padding orizzontale
+   - Allineano la pagina alla griglia globale tramite variabili CSS.
+   ========================================================================== */
+:global(.px-mobile) {
+  padding-left: var(--margin-mobile);
+  padding-right: var(--margin-mobile);
+}
+
+@media (min-width: 768px) {
+  :global(.px-desktop) {
+    padding-left: var(--margin-desktop);
+    padding-right: var(--margin-desktop);
+  }
 }
 </style>

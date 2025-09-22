@@ -9,20 +9,48 @@ import { RouterLink } from 'vue-router'
     :style="{ borderColor: 'var(--color-accent)' }"
     role="contentinfo"
   >
-    <div class="mx-auto max-w-[1280px] px-desktop md:py-6 py-5 flex flex-col gap-3 md:gap-4">
+    <div
+      class="mx-auto max-w-[1280px] px-desktop md:py-6 py-5 flex flex-col gap-3 md:gap-4"
+    >
       <!-- Riga superiore -->
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div
+        class="flex flex-col md:flex-row items-center justify-between gap-4"
+      >
         <!-- Menu -->
         <nav
-          class="flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-6 
+          class="flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-6
                  text-[13px] sm:text-[14px] md:text-base"
           aria-label="Navigazione secondaria"
         >
-          <RouterLink to="/home"          class="footer-link hover:text-hover" title="Home">Home</RouterLink>
-          <RouterLink to="/about"         class="footer-link hover:text-hover" title="About">About</RouterLink>
-          <RouterLink to="/projects"      class="footer-link hover:text-hover" title="Projects">Projects</RouterLink>
-          <RouterLink to="/illustrations" class="footer-link hover:text-hover" title="Illustrations">Illustrations</RouterLink>
-          <RouterLink to="/contacts"      class="footer-link hover:text-hover" title="Contacts">Contacts</RouterLink>
+          <RouterLink
+            to="/"
+            class="footer-link hover:text-hover"
+            title="Home"
+          >Home</RouterLink>
+
+          <RouterLink
+            to="/about"
+            class="footer-link hover:text-hover"
+            title="About"
+          >About</RouterLink>
+
+          <RouterLink
+            to="/projects"
+            class="footer-link hover:text-hover"
+            title="Projects"
+          >Projects</RouterLink>
+
+          <RouterLink
+            to="/illustrations"
+            class="footer-link hover:text-hover"
+            title="Illustrations"
+          >Illustrations</RouterLink>
+
+          <RouterLink
+            to="/contacts"
+            class="footer-link hover:text-hover"
+            title="Contacts"
+          >Contacts</RouterLink>
         </nav>
 
         <!-- Social -->
@@ -30,16 +58,43 @@ import { RouterLink } from 'vue-router'
           class="flex items-center gap-4 md:gap-4 justify-center md:justify-end w-full md:w-auto"
           aria-label="Social media"
         >
-          <a href="mailto:anna.cazzanelli@example.com" target="_blank" rel="noopener" class="footer-link" title="Email">
+          <a
+            href="mailto:anna.cazzanelli@example.com"
+            target="_blank"
+            rel="noopener"
+            class="footer-link"
+            title="Email"
+          >
             <img src="/icone/icon-email.svg" alt="" class="social-icn" />
           </a>
-          <a href="https://www.instagram.com/annaredpan/" target="_blank" rel="noopener" class="footer-link" title="Instagram">
+
+          <a
+            href="https://www.instagram.com/annaredpan/"
+            target="_blank"
+            rel="noopener"
+            class="footer-link"
+            title="Instagram"
+          >
             <img src="/icone/icon-instagram.svg" alt="" class="social-icn" />
           </a>
-          <a href="https://www.linkedin.com/in/anna-cazzanelli-a193a6276/" target="_blank" rel="noopener" class="footer-link" title="LinkedIn">
+
+          <a
+            href="https://www.linkedin.com/in/anna-cazzanelli-a193a6276/"
+            target="_blank"
+            rel="noopener"
+            class="footer-link"
+            title="LinkedIn"
+          >
             <img src="/icone/icon-linkedin.svg" alt="" class="social-icn" />
           </a>
-          <a href="https://www.behance.net/cazzanellianna" target="_blank" rel="noopener" class="footer-link" title="Behance">
+
+          <a
+            href="https://www.behance.net/cazzanellianna"
+            target="_blank"
+            rel="noopener"
+            class="footer-link"
+            title="Behance"
+          >
             <img src="/icone/icon-behance.svg" alt="" class="social-icn" />
           </a>
         </div>
@@ -56,41 +111,52 @@ import { RouterLink } from 'vue-router'
 </template>
 
 <style scoped>
-.site-footer{
+/* Fondo footer */
+.site-footer {
   background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
-.footer-link{
+
+/* Link footer */
+.footer-link {
   text-decoration: none;
   font-family: var(--font-body);
   font-weight: 500;
   color: var(--color-text);
-  transition: color .2s ease;
+  transition: color 0.2s ease;
 }
-.footer-link:hover{
+.footer-link:hover {
   color: var(--color-hover);
 }
-.social-icn{
+
+/* Icone social */
+.social-icn {
   width: 20px;
   height: 20px;
   display: block;
-  opacity: .85;
-  transition: opacity .2s ease, transform .12s ease;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.12s ease;
 }
-.footer-link:hover .social-icn{
+.footer-link:hover .social-icn {
   opacity: 1;
   transform: translateY(-1px);
   color: var(--color-hover);
 }
+
+/* Copyright */
 .copyright {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
-  opacity: .75;
+  opacity: 0.75;
 }
-@media (min-width: 768px){
-  .copyright { font-size: 16px; }
+@media (min-width: 768px) {
+  .copyright {
+    font-size: 16px;
+  }
 }
-@media (max-width: 360px){
-  .copyright { font-size: 12px; }
+@media (max-width: 360px) {
+  .copyright {
+    font-size: 12px;
+  }
 }
 </style>
