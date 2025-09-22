@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, nextTick } from 'vue'
 import { collection, query, getDocs, orderBy } from 'firebase/firestore'
 
 const db = inject('firestore')
@@ -14,7 +14,6 @@ const CATEGORY_COLORS = {
   Other:                   { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' },
 }
 
-/* Normalizza il testo della categoria */
 function normalizeCategory (raw) {
   const s = String(raw || '').trim()
   if (/commissione/i.test(s))   return 'Lavoro su commissione'
@@ -24,7 +23,6 @@ function normalizeCategory (raw) {
   return s in CATEGORY_COLORS ? s : 'Other'
 }
 
-/* Stile delle pill in base alla categoria */
 function tagStyle (category) {
   const key = normalizeCategory(category)
   const c = CATEGORY_COLORS[key] || CATEGORY_COLORS.Other
@@ -41,74 +39,71 @@ async function getIllustrations () {
   const rs  = await getDocs(q)
 
   const items = []
-  rs.forEach((doc) => {
-    items.push({ ...doc.data(), id: doc.id })
-  })
+  rs.forEach((doc) => items.push({ ...doc.data(), id: doc.id }))
   illustrations.value = items
+
+  // rotazione base leggera (solo presentazione, non influisce sul layout)
+  await nextTick()
+  document.querySelectorAll('.illustration-item').forEach((el) => {
+    const tilt = (Math.random() * 2.4 - 1.2).toFixed(2)
+    el.style.setProperty('--tilt', `${tilt}deg`)
+    el.style.setProperty('--hover-tilt', '1.6deg')
+  })
 }
 
-/* Helpers accessibilità */
 function ariaLabelFor (item) {
-  const tags =
-    Array.isArray(item.tag) && item.tag.length
-      ? `. Tag: ${item.tag.join(', ')}.`
-      : ''
+  const tags = Array.isArray(item.tag) && item.tag.length ? `. Tag: ${item.tag.join(', ')}.` : ''
   return `Apri l’illustrazione “${item.title}”${tags}`
 }
+function altFor (item) { return `Illustrazione: ${item.title}` }
 
-function altFor (item) {
-  return `Illustrazione: ${item.title}`
-}
-
-onMounted(() => {
-  getIllustrations()
-})
+onMounted(getIllustrations)
 </script>
 
 <template>
   <main class="page-content" aria-labelledby="page-title">
-    <div class="illustrations-container">
-      <!-- HERO decorativa -->
+    <!-- container principale -->
+    <div class="illustrations-container flex flex-col items-center py-4">
+      <!-- HERO -->
       <section
-        class="hero-container"
+        class="hero-container relative w-full h-[400px] overflow-hidden"
         role="region"
         aria-labelledby="page-title"
       >
-        <div class="hero-image-container" aria-hidden="true"></div>
+        <!-- immagine hero -->
+        <div class="hero-image-container absolute inset-0" aria-hidden="true"></div>
 
-        <div class="header-content-wrapper">
+        <!-- wrapper titolo -->
+        <div class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]">
           <h1 id="page-title">Illustrazioni</h1>
         </div>
       </section>
 
       <!-- GRID -->
-      <section class="illustration-content-wrapper">
+      <section class="illustration-content-wrapper w-full max-w-[1400px]">
         <div
-          class="illustration-grid"
+          class="illustration-grid grid gap-12 py-8"
           role="list"
           aria-describedby="page-title"
         >
           <RouterLink
             v-for="illustration in illustrations"
             :key="illustration.id"
-            class="illustration-item"
+            class="illustration-item flex flex-col items-center text-center no-underline outline-none"
             role="listitem"
-            :to="{
-              name: 'illustration-details',
-              params: { id: illustration.id },
-            }"
+            :to="{ name: 'illustration-details', params: { id: illustration.id } }"
             :aria-label="ariaLabelFor(illustration)"
             :title="`Apri: ${illustration.title}`"
           >
-            <!-- immagine + pill di categoria -->
-            <figure class="media">
+            <figure class="media relative m-0">
               <img
                 :src="illustration.img"
                 :alt="altFor(illustration)"
                 loading="lazy"
+                class="block max-w-full h-auto"
               />
               <figcaption
-                class="cat-badge"
+                class="cat-badge absolute top-2.5 left-2.5 px-2.5 py-1 text-[0.75rem] font-semibold select-none"
                 :style="tagStyle(illustration.category)"
                 aria-hidden="true"
               >
@@ -116,20 +111,17 @@ onMounted(() => {
               </figcaption>
             </figure>
 
-            <div class="illustration-details">
-              <h3 class="title">
-                {{ illustration.title }}
-              </h3>
-
+            <div class="illustration-details flex flex-col items-center">
+              <h3 class="title mt-4 mb-2">{{ illustration.title }}</h3>
               <div
                 v-if="illustration.tag?.length"
-                class="illustration-tags"
+                class="illustration-tags flex flex-wrap justify-center gap-1.5 mt-2"
                 aria-label="Tag dell’illustrazione"
               >
                 <span
                   v-for="tag in illustration.tag"
                   :key="tag"
-                  class="tag"
+                  class="tag px-2 py-1 text-[0.8rem]"
                   :style="tagStyle(illustration.category)"
                 >
                   {{ tag }}
@@ -144,144 +136,119 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* struttura */
-.illustrations-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem 0;
-}
-
-/* hero */
-.hero-container {
-  position: relative;
-  width: 100%;
-  height: 400px;
-  overflow: hidden;
-  
-}
+/* ===== hero ===== */
 .hero-image-container {
-  position: absolute;
-  inset: 0;
   background-image: url('/images/illustration/copertina/illustration_lightmode.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-size: contain; 
+  background-repeat: no-repeat; 
   background-position: right center;
   transform: translateY(-8%);
 }
-.header-content-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  width: 100%;
-  
-}
-
-/* grid */
-.illustration-content-wrapper {
-  width: 100%;
-  max-width: 1400px;
-}
-.illustration-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 4rem;
-  padding: 2rem 0;
-}
-
-/* card (RouterLink) */
-.illustration-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  text-decoration: none;
-  color: inherit;
-  outline: none;
-}
-.illustration-item:focus-visible {
-  outline: 3px solid #94b7ff;
-  outline-offset: 4px;
-  border-radius: 10px;
-}
-
-/* figure con pill di categoria */
-.media {
-  position: relative;
-  margin: 0;
-}
-.media img {
-  max-width: 100%;
-  height: auto;
-  display: block; /* nessuna modifica alle dimensioni */
-}
-.cat-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid currentColor; /* visibilità su fondi chiari */
-  backdrop-filter: saturate(120%) blur(2px);
-  user-select: none;
-}
-
-/* dettagli sotto */
-.illustration-details {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.title {
-  font-size: medium;
-  margin: 1rem 0 0.5rem 0;
-}
-
-/* tag */
-.illustration-tags {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.5rem;
-}
-.tag {
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  border: 1px solid currentColor;
-}
-
-/* dark mode hero */
 body.dark-mode .hero-image-container {
   background-image: url('/images/illustration/copertina/illustration_darkmode.png');
 }
 
-@media (max-width: 1024px) and (min-width: 769px) {
-
-  /* Adattamento per tablet */
-  .hero-image-container {
-    background-position: right center;
-    transform: translateY(-10%);
-    opacity: 0.95;
-   
-  }
+/* wrapper titolo centrato verticalmente e con padding inline */
+.header-content-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  text-align: center;
+  width: 100%;
+  padding-inline: var(--margin-desktop);
+  box-sizing: border-box;
+}
+@media (max-width: 768px) {
+  .header-content-wrapper { padding-inline: var(--margin-mobile); }
 }
 
-/* mobile */
+/* H1 tablet/mobile — su desktop rimane 64pt/77pt dai tuoi token */
+@media (max-width: 1024px) and (min-width: 769px) { .header-content-wrapper h1 { font-size: 40pt; line-height: 50pt; } }
+@media (max-width: 768px) { .header-content-wrapper h1 { font-size: 28pt; line-height: 36pt; } }
+
+/* ===== GRID (3/2/1) ===== */
+.illustration-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* desktop */
+  grid-auto-flow: dense;
+}
+@media (min-width: 1200px) {
+  .illustration-grid > .illustration-item:nth-child(8n + 1),
+  .illustration-grid > .illustration-item:nth-child(8n + 5) { grid-column: span 2; }
+
+  .illustration-grid > .illustration-item:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1 !important;
+  }
+  .illustration-grid > .illustration-item:nth-last-child(2):nth-child(3n + 1),
+  .illustration-grid > .illustration-item:last-child:nth-child(3n + 2) {
+    grid-column: span 1 !important;
+  }
+}
+@media (max-width: 1199px) and (min-width: 769px) {
+  .illustration-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .illustration-grid > .illustration-item:nth-child(6n + 1) { grid-column: span 2; }
+  .illustration-grid > .illustration-item:last-child:nth-child(2n + 1) {
+    grid-column: 1 / -1 !important;
+  }
+}
+@media (max-width: 768px) { .illustration-grid { grid-template-columns: 1fr; } }
+
+/* ===== Card ===== */
+.illustration-item {
+  --tilt: 0deg; --hover-tilt: 1.5deg; --lift: 8px;
+  will-change: transform;
+}
+.illustration-item:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 6px;
+}
+
+/* figure + effetti */
+.media { transform: rotate(var(--tilt)); transition: transform 220ms ease, filter 220ms ease; }
+.media img {
+  border: 1px solid rgba(var(--text-rgb) / 0.12);
+  box-shadow:
+    0 1px 2px rgba(var(--text-rgb) / 0.20),
+    0 8px 20px rgba(var(--text-rgb) / 0.12);
+  background: var(--color-surface);
+}
+.cat-badge {
+  border: 1px solid currentColor;
+  backdrop-filter: saturate(120%) blur(2px);
+  border-radius: 9999px;
+}
+.illustration-item:hover .media,
+.illustration-item:focus-visible .media {
+  transform:
+    rotate(calc(var(--tilt) + var(--hover-tilt)))
+    translateY(calc(-1 * var(--lift)))
+    scale(1.02);
+  filter: contrast(1.03) saturate(1.02);
+}
+
+/* mobile: card dritte */
 @media (max-width: 768px) {
-  .illustration-grid {
-    grid-template-columns: 1fr;
-  }
-  .hero-image-container {
-    background-position: right top;
-    transform: translateY(-10%);
-    opacity: 0.9;
-  }
-  
+  .media { transform: none !important; }
+  .illustration-item:hover .media,
+  .illustration-item:focus-visible .media { transform: none !important; filter: none !important; }
+}
+
+/* titoli e tag */
+.title { font-size: 18pt; line-height: 27pt; }
+.tag { border: 1px solid currentColor; border-radius: 9999px; }
+
+/* tablet hero fine-tune */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .hero-image-container { background-position: right center; transform: translateY(-10%); opacity: 0.95; }
+}
+@media (max-width: 768px) {
+  .hero-image-container { background-position: right top; transform: translateY(-10%); opacity: 0.9; }
+}
+
+/* motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .media { transition: none; }
+  .illustration-item:hover .media, .illustration-item:focus-visible .media { transform: none; filter: none; }
 }
 </style>

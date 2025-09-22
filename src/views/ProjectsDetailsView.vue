@@ -140,7 +140,8 @@ const normKey = (u) => {
   const file = clean.split('/').pop() || ''
   return file.replace(/\.(webp|png|jpe?g|gif|avif)$/i, '')
 }
-
+ //  forziamo SEMPRE la pagina all’inizio
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 /* normalizza gallery */
 const galleryPairs = computed(() => {
   const g = project.value?.gallery
@@ -300,7 +301,7 @@ watch(() => route.params.id, fetchProject)
 /* Back (come home, area tonda invisibile) */
 .back-btn{
   position:absolute; top:-60px; left:0;
-  width:48px; height:48px; border:none; border-radius:50%;
+  width:48px; height:48px; border:none;
   background:transparent; display:inline-flex; align-items:center; justify-content:center;
   text-decoration:none; transition:background-color .2s, transform .1s;
 }

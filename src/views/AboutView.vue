@@ -8,7 +8,7 @@ import { RouterLink } from 'vue-router'
     class="bg-surface text-text py-12 px-mobile md:px-desktop"
     aria-labelledby="about-title"
   >
-    <!-- Intro (niente margin-bottom: usa solo il padding del main) -->
+    <!-- Intro -->
     <section
       class="mx-auto max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-7 md:gap-[72px] items-start"
       role="region"
@@ -19,11 +19,12 @@ import { RouterLink } from 'vue-router'
 
       <!-- Testo -->
       <article class="bio max-w-[68ch]">
-        <!-- mobile più piccolo + no wrap; da md in su torna al clamp -->
+        <!-- Desktop segue il clamp; su tablet/mobile forziamo 40pt/28pt come le altre hero -->
         <h1
           id="about-title"
           class="m-0 mb-4 text-accent leading-[1.1] whitespace-nowrap
-         text-[28px] xs:text-[30px] sm:text-[36px] md:text-[clamp(32px,4vw,48px)]"
+                 text-[28px] xs:text-[30px] sm:text-[36px]
+                 md:text-[clamp(32px,4vw,48px)]"
         >
           About me
         </h1>
@@ -82,12 +83,22 @@ body.dark-mode .portrait{
   }
 }
 
-/* Tipografia paragrafi: batte p{} globali */
+/* Tipografia paragrafi */
 .bio p{
   margin: 0 0 16px;
   color: var(--color-text);
   font-size: clamp(16px, 1.05vw, 18px);
   line-height: 1.85;
+}
+
+/* === H1 come le altre hero === */
+@media (max-width: 1024px) and (min-width: 769px){
+  /* Tablet: 40pt/50pt */
+  #about-title{ font-size: 40pt; line-height: 50pt; }
+}
+@media (max-width: 768px){
+  /* Mobile: 28pt/36pt e permetti a capo */
+  #about-title{ font-size: 28pt; line-height: 36pt; white-space: normal; }
 }
 
 /* Utility per padding orizzontale coerente con il resto del sito */

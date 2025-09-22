@@ -45,28 +45,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <main
-    aria-labelledby="page-title"
-    class="bg-surface text-text px-[var(--margin-desktop)] phone:px-[var(--margin-mobile)]"
-  >
-    <div class="flex flex-col items-center">
+ <main class="page-content" aria-labelledby="page-title">
+    <!-- container principale -->
+    <div class="projects-container flex flex-col items-center py-4">
       <!-- HERO -->
-      <section class="relative w-full h-[400px] overflow-hidden mb-10 phone:mb-3">
-        <div class="hero-image absolute inset-0"></div>
+      <section
+        class="hero-container relative w-full h-[400px] overflow-hidden"
+        role="region"
+        aria-labelledby="page-title"
+      >
+        <!-- immagine hero -->
+        <div class="hero-image-container absolute inset-0" aria-hidden="true"></div>
 
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center px-[var(--margin-mobile)]">
-          <h1
-            id="page-title"
-            class="m-0 font-extrabold text-accent tracking-tight
-                   text-[28px] xs:text-[32px] sm:text-[40px]
-                   md:text-[clamp(44px,6.2vw,96px)]
-                   phone:leading-tight"
-          >
-            Progetti Digitali
-          </h1>
+        <!-- wrapper titolo -->
+        <div class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]">
+          <h1 id="page-title">Progetti Digitali</h1>
         </div>
       </section>
-
       <p v-if="error" class="text-[#d00] my-2" role="alert">{{ error }}</p>
 
       <!-- SKELETON -->
@@ -144,22 +139,36 @@ onMounted(() => {
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
-.hero-image{
+.hero-image-container {
   background-image: url('/images/projects/copertina/project_lightmode.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-size: contain; 
+  background-repeat: no-repeat; 
   background-position: right center;
   transform: translateY(-8%);
 }
-body.dark-mode .hero-image{
+body.dark-mode .hero-image-container {
   background-image: url('/images/projects/copertina/project_darkmode.png');
 }
-@media (max-width: 1024px) and (min-width: 769px){
-  .hero-image{ background-position:right center; transform: translateY(-10%); opacity:.95; }
+
+/* wrapper titolo centrato verticalmente e con padding inline */
+.header-content-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  text-align: center;
+  width: 100%;
+  padding-inline: var(--margin-desktop);
+  box-sizing: border-box;
 }
-@media (max-width: 768px){
-  .hero-image{ background-position:right top; transform: translateY(-12%); opacity:.9; }
+@media (max-width: 768px) {
+  .header-content-wrapper { padding-inline: var(--margin-mobile); }
 }
+
+/* H1 tablet/mobile — su desktop rimane 64pt/77pt dai tuoi token */
+@media (max-width: 1024px) and (min-width: 769px) { .header-content-wrapper h1 { font-size: 40pt; line-height: 50pt; } }
+@media (max-width: 768px) { .header-content-wrapper h1 { font-size: 28pt; line-height: 36pt; } }
 
 .project-item:focus-visible{
   outline: 3px solid #94b7ff;
