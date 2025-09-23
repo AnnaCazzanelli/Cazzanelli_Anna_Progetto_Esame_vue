@@ -7,17 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
+# Build/artifacts
+node_modules/
+dist/
+dist-ssr/
+coverage/
 
+# Local env / machine files
+*.local
+.env.local
+.DS_Store
+
+# Cypress
 /cypress/videos/
 /cypress/screenshots/
 
-# Editor directories and files
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -26,11 +31,13 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-
 *.tsbuildinfo
-.env.local
 
-# Sistema operativo
+# OS
 Thumbs.db
 ehthumbs.db
 Icon?
+
+# --- IMPORTANTISSIMO: NON ignorare le icone pubbliche ---
+!public/icone/
+!public/icone/*.svg
