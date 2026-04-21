@@ -59,7 +59,7 @@ import { RouterLink } from 'vue-router'
           aria-label="Social media"
         >
           <a
-            href="mailto:anna.cazzanelli@example.com"
+            href="mailto:anna.cazzanelli1@gmail.com"
             target="_blank"
             rel="noopener"
             class="footer-link"
