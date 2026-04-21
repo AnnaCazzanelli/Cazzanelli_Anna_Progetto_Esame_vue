@@ -47,8 +47,8 @@ window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
           Ciao! Sono Anna Cazzanelli, illustratrice e digital designer.<br />
           Dopo il diploma al Liceo Artistico <strong><em>A. Vittoria</em></strong> di Trento e la
           laurea triennale in Nuove Tecnologie dell’Arte all’Accademia di Belle Arti
-          <strong><em>G. Cignaroli</em></strong> di Verona, attualmente sto completando il
-          biennio magistrale in Digital Design &amp; Communication alla
+          <strong><em>G. Cignaroli</em></strong> di Verona, ho recentemente conseguito la
+          laurea magistrale in Digital Design &amp; Communication alla
           <strong><em>LABA </em></strong> Libera Accademia di Belle Arti di Brescia.
         </p>
 
