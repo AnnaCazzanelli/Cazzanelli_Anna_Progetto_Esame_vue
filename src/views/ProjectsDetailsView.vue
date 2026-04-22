@@ -13,12 +13,8 @@ import { doc, getDoc } from 'firebase/firestore'
 
 /* ==========================================================================
    Stato view
-   - project: dati del progetto corrente
-   - loading / notFound: stati UI
-   - activeIndex: indice immagine attiva nello stage
    ========================================================================== */
 const route = useRoute()
-
 const project = ref(null)
 const loading = ref(true)
 const notFound = ref(false)
@@ -26,8 +22,6 @@ const activeIndex = ref(0)
 
 /* ==========================================================================
    Helpers
-   - isImgUrl: controllo estensione immagini
-   - normKey: normalizza il nome file per deduplicare
    ========================================================================== */
 const isImgUrl = (u) =>
   typeof u === 'string' && /\.(webp|png|jpe?g|gif|avif)$/i.test((u || '').trim())
@@ -40,14 +34,7 @@ const normKey = (u) => {
 }
 
 /* ==========================================================================
-   Scroll iniziale
-   - Garantisce l’avvio view dall’inizio pagina
-   ========================================================================== */
-window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-
-/* ==========================================================================
    Normalizzazione gallery
-   - galleryPairs: coppie {hi, lo} da high_res/low_res o stringhe singole
    ========================================================================== */
 const galleryPairs = computed(() => {
   const g = project.value?.gallery
@@ -56,11 +43,7 @@ const galleryPairs = computed(() => {
     .map((it) => {
       if (it && typeof it === 'object') {
         const hi = it.high_res?.trim?.() || it.low_res?.trim?.() || ''
-        const lo = isImgUrl(it.low_res)
-          ? it.low_res.trim()
-          : isImgUrl(it.high_res)
-            ? it.high_res.trim()
-            : ''
+        const lo = isImgUrl(it.low_res) ? it.low_res.trim() : (isImgUrl(it.high_res) ? it.high_res.trim() : '')
         return { hi, lo }
       }
       if (typeof it === 'string') {
@@ -73,17 +56,20 @@ const galleryPairs = computed(() => {
 })
 
 /* ==========================================================================
-   Immagini per lo stage
+   Immagini per lo stage (Patch HD Cover)
    ========================================================================== */
 const images = computed(() => {
   if (!project.value) return []
   const out = []
   const added = new Set()
-
-  const cover = (project.value.main_image?.trim?.() || project.value.img || '').trim()
-  if (isImgUrl(cover)) {
-    out.push({ src: cover, alt: `${project.value.title} – cover` })
-    added.add(normKey(cover))
+  const coverRaw = (project.value.main_image?.trim?.() || project.value.img || '').trim()
+  
+  if (isImgUrl(coverRaw)) {
+    const coverKey = normKey(coverRaw)
+    const hiResMatch = galleryPairs.value.find(p => normKey(p.hi) === coverKey)
+    const finalCoverSrc = hiResMatch ? hiResMatch.hi : coverRaw
+    out.push({ src: finalCoverSrc, alt: `${project.value.title} – cover` })
+    added.add(coverKey)
   }
 
   for (const p of galleryPairs.value) {
@@ -99,20 +85,16 @@ const images = computed(() => {
 
 /* ==========================================================================
    Miniature immagini
-    - Prima la cover (se esistente), poi le altre in ordine.
    ========================================================================== */
 const thumbs = computed(() => {
   if (!project.value) return []
   const out = []
   const added = new Set()
-
   const loByKey = new Map()
   for (const p of galleryPairs.value) {
     const lo = isImgUrl(p.lo) ? p.lo : (isImgUrl(p.hi) ? p.hi : '')
-    if (!lo) continue
-    loByKey.set(normKey(p.hi || lo), lo)
+    if (lo) loByKey.set(normKey(p.hi || lo), lo)
   }
-
   const cover = (project.value.main_image?.trim?.() || project.value.img || '').trim()
   if (isImgUrl(cover)) {
     const coverKey = normKey(cover)
@@ -121,62 +103,33 @@ const thumbs = computed(() => {
     added.add(normKey(coverThumb))
     added.add(coverKey)
   }
-
   for (const p of galleryPairs.value) {
     const candidate = isImgUrl(p.lo) ? p.lo : (isImgUrl(p.hi) ? p.hi : '')
     if (!candidate) continue
     const key = normKey(candidate)
-    if (added.has(key)) continue
-    out.push({ src: candidate, alt: `${project.value.title} – miniatura` })
-    added.add(key)
+    if (!added.has(key)) {
+      out.push({ src: candidate, alt: `${project.value.title} – miniatura` })
+      added.add(key)
+    }
   }
-
   return out
 })
 
 /* ==========================================================================
-   Viewer: navigazione
+   Navigazione e Swipe
    ========================================================================== */
 const setActive = (i) => { activeIndex.value = i }
 const prev = () => { if (activeIndex.value > 0) activeIndex.value-- }
 const next = () => { if (activeIndex.value < images.value.length - 1) activeIndex.value++ }
 
-/* ==========================================================================
-   Swipe touch (mobile)
-   - Rileva swipe orizzontale entro angolo massimo consentito
-   ========================================================================== */
-const startX = ref(0)
-const startY = ref(0)
-const deltaX = ref(0)
-
+const startX = ref(0), startY = ref(0), deltaX = ref(0)
 const SWIPE = { threshold: 45, maxAngle: 60 }
-
-function onTouchStart (e) {
-  const t = e.changedTouches?.[0]
-  if (!t) return
-  startX.value = t.clientX
-  startY.value = t.clientY
-  deltaX.value = 0
-}
-
-function onTouchMove (e) {
-  const t = e.changedTouches?.[0]
-  if (!t) return
-  const dx = t.clientX - startX.value
-  const dy = Math.abs(t.clientY - startY.value)
-  deltaX.value = dy < SWIPE.maxAngle ? dx : 0
-}
-
-function onTouchEnd () {
-  const dx = deltaX.value
-  if (Math.abs(dx) >= SWIPE.threshold) {
-    dx < 0 ? next() : prev()
-  }
-  deltaX.value = 0
-}
+function onTouchStart(e) { const t = e.changedTouches?.[0]; if (!t) return; startX.value = t.clientX; startY.value = t.clientY; deltaX.value = 0 }
+function onTouchMove(e) { const t = e.changedTouches?.[0]; if (!t) return; const dx = t.clientX - startX.value, dy = Math.abs(t.clientY - startY.value); deltaX.value = dy < SWIPE.maxAngle ? dx : 0 }
+function onTouchEnd() { if (Math.abs(deltaX.value) >= SWIPE.threshold) { deltaX.value < 0 ? next() : prev() }; deltaX.value = 0 }
 
 /* ==========================================================================
-   Stile pill categoria 
+   Colori Categorie
    ========================================================================== */
 const CATEGORY_COLORS = {
   'Art Direction': { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
@@ -184,190 +137,78 @@ const CATEGORY_COLORS = {
   'Copywriting':   { bg: '#ffe3e3', bd: '#ffa8a8', fg: '#7a1f1f' },
   Other:           { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' }
 }
-
 const tagStyle = computed(() => {
-  const cat = project.value?.category
-  const c = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Other
-  return {
-    background: c.bg,
-    border: `1px solid ${c.bd}`,
-    color: c.fg
-  }
+  const c = CATEGORY_COLORS[project.value?.category] || CATEGORY_COLORS.Other
+  return { background: c.bg, border: `1px solid ${c.bd}`, color: c.fg }
 })
 
-/* ==========================================================================
-   Fetch progetto
-   - Recupero documento per id route
-   - Gestione loading/notFound
-   ========================================================================== */
-async function fetchProject () {
-  loading.value = true
-  notFound.value = false
-  project.value = null
-  activeIndex.value = 0
-
+async function fetchProject() {
+  loading.value = true; notFound.value = false; project.value = null; activeIndex.value = 0
   const id = String(route.params.id || '').trim()
-  if (!id) {
-    notFound.value = true
-    loading.value = false
-    return
-  }
-
   try {
     const snap = await getDoc(doc(db, 'projects', id))
-    if (!snap.exists()) {
-      notFound.value = true
-      return
-    }
+    if (!snap.exists()) { notFound.value = true; return }
     project.value = { id: snap.id, ...snap.data() }
-  } catch (e) {
-    console.error('Errore nel recupero del documento:', e)
-    notFound.value = true
-  } finally {
-    loading.value = false
-  }
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  } catch (e) { notFound.value = true } finally { loading.value = false }
 }
-
-/* ==========================================================================
-   Lifecycle
-   ========================================================================== */
-onMounted(fetchProject)
-watch(() => route.params.id, fetchProject)
+onMounted(fetchProject); watch(() => route.params.id, fetchProject)
 </script>
 
 <template>
   <main class="page bg-surface text-text">
-
-    <!-- Stato: loading -->
-    <div v-if="loading" class="loading" role="status" aria-live="polite">
-      Caricamento progetto…
-    </div>
-
-    <!-- Stato: not found -->
+    <div v-if="loading" class="loading">Caricamento progetto…</div>
     <div v-else-if="notFound" class="notfound">
       <p>Progetto non trovato.</p>
       <RouterLink to="/projects" class="back-link">Torna ai progetti</RouterLink>
     </div>
 
-    <!-- Stato: ok -->
     <div v-else-if="project" class="container">
-      
-      <!-- Pulsante back -->
-      <RouterLink
-        to="/projects"
-        class="back-btn"
-        aria-label="Torna ai progetti"
-        title="Torna ai progetti"
-      >
-        <img src="/icone/icon-arrowsx.svg" alt="" aria-hidden="true" class="icon" />
-        <span class="sr-only">Torna ai progetti</span>
+      <RouterLink to="/projects" class="back-btn">
+        <img src="/icone/icon-arrowsx.svg" alt="" class="icon" />
       </RouterLink>
 
-      <!-- Titolo progetto -->
-      <h1 class="title text-accent text-center">
-        {{ project.title }}
-      </h1>
+      <h1 class="title text-accent text-center">{{ project.title }}</h1>
 
-      <!-- Viewer / Carosello -->
-      <section class="viewer" aria-label="Galleria immagini del progetto">
-        <button
-          class="nav"
-          type="button"
-          :disabled="activeIndex === 0 || images.length <= 1"
-          @click="prev"
-          aria-label="Immagine precedente"
-          title="Immagine precedente"
-        >
-          <img src="/icone/icon-prev.svg" alt="" aria-hidden="true" class="icon" />
+      <div v-if="project.behance_url" class="behance-header-link">
+        <a :href="project.behance_url" target="_blank" rel="noopener noreferrer">
+          <img src="/icone/icon-behance.svg" alt="" class="behance-mini-icon" />
+          Approfondisci il progetto su Behance
+        </a>
+      </div>
+
+      <section class="viewer">
+        <button class="nav" :disabled="activeIndex === 0" @click="prev">
+          <img src="/icone/icon-prev.svg" alt="" class="icon" />
         </button>
-
-        <div
-          class="stage"
-          tabindex="0"
-          aria-live="polite"
-          @keydown.left.prevent="prev"
-          @keydown.right.prevent="next"
-          @touchstart.passive="onTouchStart"
-          @touchmove.passive="onTouchMove"
-          @touchend="onTouchEnd"
-        >
-          <img
-            :src="images[activeIndex].src"
-            :alt="images[activeIndex].alt"
-            class="stage-img"
-            loading="eager"
-          />
+        <div class="stage" @touchstart.passive="onTouchStart" @touchmove.passive="onTouchMove" @touchend="onTouchEnd">
+          <img :src="images[activeIndex].src" :alt="images[activeIndex].alt" class="stage-img" />
         </div>
-
-        <button
-          class="nav"
-          type="button"
-          :disabled="activeIndex === images.length - 1 || images.length <= 1"
-          @click="next"
-          aria-label="Immagine successiva"
-          title="Immagine successiva"
-        >
-          <img src="/icone/icon-next.svg" alt="" aria-hidden="true" class="icon" />
+        <button class="nav" :disabled="activeIndex === images.length - 1" @click="next">
+          <img src="/icone/icon-next.svg" alt="" class="icon" />
         </button>
       </section>
 
-      <!-- Miniature immagini -->
-      <section
-        v-if="thumbs.length > 1"
-        class="thumbs"
-        aria-label="Miniature immagini"
-      >
-        <button
-          v-for="(t, i) in thumbs"
-          :key="t.src + i"
-          class="thumb"
-          :class="{ active: i === activeIndex }"
-          type="button"
-          :aria-label="`Mostra immagine ${i + 1}`"
-          :title="`Mostra immagine ${i + 1}`"
-          @click="setActive(i)"
-        >
+      <section v-if="thumbs.length > 1" class="thumbs">
+        <button v-for="(t, i) in thumbs" :key="i" class="thumb" :class="{ active: i === activeIndex }" @click="setActive(i)">
           <img :src="t.src" :alt="t.alt" />
         </button>
       </section>
 
-      <!-- Metadati -->
-      <section class="meta" aria-label="Dettagli progetto">
+      <section class="meta">
         <div class="col">
           <h3>Data</h3>
-          <p v-if="project.year">
-            {{ project.year }}
-          </p>
-
-        <h3>Tipo di progetto</h3>
-          <p>
-            <span class="pill" :style="tagStyle">
-              {{ project.category || 'Other' }}
-            </span>
-          </p>
-
+          <p v-if="project.year">{{ project.year }}</p>
+          <h3>Tipo di progetto</h3>
+          <p><span class="pill" :style="tagStyle">{{ project.category || 'Other' }}</span></p>
           <h3>Tag</h3>
-          <ul
-            v-if="project.tag?.length"
-            class="tags"
-            aria-label="Tag del progetto"
-          >
-            <li
-              v-for="(t, i) in project.tag"
-              :key="i"
-              class="pill"
-              :style="tagStyle"
-            >
-              {{ t }}
-            </li>
+          <ul v-if="project.tag?.length" class="tags">
+            <li v-for="(t, i) in project.tag" :key="i" class="pill" :style="tagStyle">{{ t }}</li>
           </ul>
         </div>
-
         <div class="col">
           <h3>Description:</h3>
-          <p v-if="project.description" class="desc">
-            {{ project.description }}
-          </p>
+          <p v-if="project.description" class="desc">{{ project.description }}</p>
         </div>
       </section>
     </div>
@@ -375,274 +216,44 @@ watch(() => route.params.id, fetchProject)
 </template>
 
 <style scoped>
-/* Accessibilità: classe solo per screen reader */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
+/* Ripristino stili originali */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.page { padding: 48px var(--margin-desktop) 112px; }
+.container { max-width: 1200px; margin: 0 auto; position: relative; }
+.loading, .notfound { padding: 160px 0; text-align: center; opacity: 0.8; }
+.back-link { color: var(--color-accent); text-decoration: none; }
+.back-btn { position: absolute; top: -60px; left: 0; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.back-btn:hover { background: rgba(0,0,0,0.06); }
+.title { font-size: clamp(32px, 4.2vw, 56px); line-height: 1.1; margin: 56px 0 10px; } /* Ridotto margine bottom per il link */
 
-/* Layout principali */
-.page {
-  padding: 48px var(--margin-desktop) 112px;
-}
+/* Stile Behance Sotto Titolo */
+.behance-header-link { text-align: center; margin-bottom: 40px; }
+.behance-header-link a { display: inline-flex; align-items: center; gap: 8px; color: var(--color-accent); text-decoration: none; font-weight: 500; font-size: 1rem; opacity: 0.8; transition: opacity 0.2s; }
+.behance-header-link a:hover { opacity: 1; text-decoration: underline; }
+.behance-mini-icon { width: 14px; height: 14px; transform: rotate(-45deg); } /* Ruotata per sembrare un link esterno */
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-}
+.viewer { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 24px; margin: 0 0 56px; }
+.stage { width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; outline: none; touch-action: pan-y; }
+.stage-img { height: clamp(360px, 62vh, 720px); width: auto; max-width: 100%; object-fit: contain; display: block; }
+.nav { width: 48px; height: 48px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.nav:disabled { opacity: 0.35; cursor: not-allowed; }
+.thumbs { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; margin: 40px 80px; }
+.thumb { width: 112px; height: 112px; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; cursor: pointer; padding: 0; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb.active { outline: 3px solid var(--color-accent); }
+.meta { display: grid; grid-template-columns: 1fr 2fr; gap: 72px; margin-top: 16px; padding-top: 40px; }
+.meta h3 { font-size: clamp(20px, 1.9vw, 24px); margin: 0 0 16px; color: var(--color-accent); }
+.desc, .meta .col p { font-size: clamp(15px, 1.05vw, 18px); line-height: 1.8; margin: 0 0 14px; }
+.tags { display: flex; gap: 12px; flex-wrap: wrap; list-style: none; padding: 0; }
+.pill { padding: 8px 12px; border-radius: 999px; font-size: 0.95rem; border: 1px solid currentColor; }
 
-.loading,
-.notfound {
-  padding: 160px 0;
-  text-align: center;
-  opacity: 0.8;
-}
-
-.back-link {
-  color: var(--color-accent);
-  text-decoration: none;
-}
-
-/* Pulsante back */
-.back-btn {
-  position: absolute;
-  top: -60px;
-  left: 0;
-  width: 48px;
-  height: 48px;
-  border: none;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition:
-    background-color 0.2s,
-    transform 0.1s;
-}
-
-.back-btn .icon {
-  width: 24px;
-  height: 24px;
-  display: block;
-}
-
-.back-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.back-btn:active {
-  transform: scale(0.98);
-}
-
-.back-btn:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-/* Titolo */
-.title {
-  font-size: clamp(32px, 4.2vw, 56px);
-  line-height: 1.1;
-  margin: 56px 0 48px;
-}
-
-/* Viewer
-   - Griglia: prev | stage | next */
-.viewer {
-  --viewer-nav: 56px;
-  --viewer-gap: 24px;
-  display: grid;
-  grid-template-columns: var(--viewer-nav) 1fr var(--viewer-nav);
-  align-items: center;
-  gap: var(--viewer-gap);
-  margin: 0 0 56px;
-}
-
-/* stage: area immagine grande */
-.stage {
-  width: 100%;
-  background: var(--color-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  outline: none;
-  touch-action: pan-y;
-}
-
-.stage-img {
-  height: clamp(360px, 62vh, 720px);
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-/* Controlli viewer*/
-.nav {
-  width: 48px;
-  height: 48px;
-  border: none;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    transform 0.1s;
-}
-
-.nav .icon {
-  width: 24px;
-  height: 24px;
-  display: block;
-  pointer-events: none;
-}
-
-.nav:hover {
-  background-color: rgba(0, 0, 0, 0.06);
-}
-
-.nav:active {
-  transform: scale(0.96);
-}
-
-.nav:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-/* Miniature immagini */
-.thumbs {
-  display: flex;
-  gap: 40px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 40px calc(var(--viewer-nav) + var(--viewer-gap)) 40px;
-}
-
-.thumb {
-  width: 112px;
-  height: 112px;
-  border: 1px solid #e9ecef;
-  border-radius: var(--border-radius-card);
-  overflow: hidden;
-  background: var(--color-surface);
-  cursor: pointer;
-  padding: 0;
-}
-
-.thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  background: var(--color-surface);
-}
-
-.thumb.active {
-  outline: 3px solid var(--color-accent);
-}
-
-/* Metadati */
-.meta {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 72px;
-  margin-top: 16px;
-  padding-top: 40px;
-}
-
-.meta h3 {
-  font-size: clamp(20px, 1.9vw, 24px);
-  margin: 0 0 16px;
-  color: var(--color-accent);
-}
-
-.desc,
-.meta .col p {
-  font-size: clamp(15px, 1.05vw, 18px);
-  line-height: 1.8;
-  margin: 0 0 14px;
-}
-
-/* Tag pills */
-.tags {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 8px;
-  list-style: none;
-  padding: 0;
-}
-
-.pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  font-family: var(--font-body);
-  line-height: 1;
-  border: 1px solid currentColor;
-}
-
-/*Mobile*/
 @media (max-width: 768px) {
-  .page {
-    padding: 32px var(--margin-mobile) 96px;
-  }
-
-  .viewer {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-bottom: 40px;
-  }
-
-  .nav {
-    display: none; /* swipe su mobile */
-  }
-
-  .stage {
-    min-height: 300px;
-    padding: 8px 0;
-  }
-
-  .stage-img {
-    width: 100%;
-    height: auto;
-    max-height: 70vh;
-    object-fit: contain;
-  }
-
-  .thumb {
-    width: 92px;
-    height: 92px;
-  }
-
-  .thumbs {
-    gap: 16px;
-    margin: 0 0 56px;
-  }
-
-  .meta {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    padding-top: 28px;
-  }
-
-  .back-btn {
-    top: -80px;
-    left: 8px;
-  }
+  .page { padding: 32px var(--margin-mobile) 96px; }
+  .viewer { grid-template-columns: 1fr; gap: 16px; }
+  .nav { display: none; }
+  .stage-img { width: 100%; height: auto; max-height: 70vh; }
+  .thumbs { gap: 16px; margin: 0 0 56px; }
+  .meta { grid-template-columns: 1fr; gap: 28px; }
+  .back-btn { top: -80px; left: 8px; }
 }
 </style>
