@@ -255,7 +255,7 @@ watch(illustrations, async () => {
 
         <RouterLink
           to="/about"
-          class="cta"
+          class="cta hero-btn whitespace-nowrap"
           aria-label="Vai alla pagina About per saperne di più su Anna Cazzanelli"
           title="Scopri di più"
         >
@@ -525,17 +525,32 @@ watch(illustrations, async () => {
 
 @media (max-width: 1024px) {
   .hand-wrap {
-    width: clamp(240px, 32vw, 360px);
+    width: clamp(280px, 34vw, 420px);
+        margin-top:80px;
+       margin-right:12px;
   }
 }
 
 @media (max-width: 600px) {
-  .hand-wrap {
-    width: clamp(200px, 34vw, 260px);
-    margin-top:95px;
-    margin-right: -40px;
+  .title {
+    font-size: clamp(118px, 17vw, 300px);
   }
-}
+  .hand-wrap {
+    width: clamp(100px, 32vw, 260px);
+    margin-top:200px;
+    margin-right: -10px;
+  }
+
+ } 
+@media (max-width: 480px) {
+  .hand-wrap {
+    width: clamp(130px, 32vw, 260px);
+    margin-top:240px;
+    margin-right: -20px;
+  }
+
+  }
+
 
 /* CTA hero */
 .cta {
