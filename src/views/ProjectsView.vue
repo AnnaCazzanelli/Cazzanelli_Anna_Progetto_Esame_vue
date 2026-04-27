@@ -9,9 +9,15 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 const projects = ref([])
 const loading  = ref(true)
 const error    = ref(null)
-
-// Stato del filtro attivo
 const activeFilter = ref('All')
+
+/* ==========================================================================
+   Scroll iniziale
+   ========================================================================== */
+onMounted(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  getProjects()
+})
 
 /* ==========================================================================
    Configurazione Categorie e Colori
@@ -27,7 +33,7 @@ const CATEGORY_COLORS = {
 const filterOptions = ['All', 'Web Design', 'Visual Design', 'Communication', 'Case Studies'];
 
 /* ==========================================================================
-   Logica di Filtraggio e Stili Dinamici (Fix Spazio Bianco)
+   Logica di Filtraggio e Stili
    ========================================================================== */
 const filteredProjects = computed(() => {
   if (activeFilter.value === 'All') return projects.value
@@ -38,13 +44,12 @@ function setFilter(filter) {
   activeFilter.value = filter
 }
 
-// Calcola lo stile del filtro attivo usando box-shadow invece di outline
 function getFilterActiveStyle(category) {
   if (category === 'All') {
     return {
       backgroundColor: 'rgba(var(--accent-rgb), 0.15)',
       color: 'var(--color-accent)',
-      boxShadow: '0 0 0 2px var(--color-accent)' // Ombra netta che aderisce perfettamente
+      boxShadow: '0 0 0 2px var(--color-accent)'
     };
   }
   const c = CATEGORY_COLORS[category];
@@ -52,11 +57,11 @@ function getFilterActiveStyle(category) {
   return {
     backgroundColor: c.bg,
     color: c.fg,
-    boxShadow: `0 0 0 2px ${c.bd}` // Bordo perfetto senza spazi bianchi
+    boxShadow: `0 0 0 2px ${c.bd}`
   };
 }
 
-function badgeStyle (category) {
+function badgeStyle(category) {
   const c = CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
   return {
     background: c.bg,
@@ -66,9 +71,18 @@ function badgeStyle (category) {
 }
 
 /* ==========================================================================
-   Fetch dati
+   Accessibilità e Fetch
    ========================================================================== */
-async function getProjects () {
+function ariaLabelFor(p) {
+  const cat = p.category || 'Categoria non specificata'
+  return `Apri il progetto “${p.title}”. Categoria: ${cat}`
+}
+
+function altFor(p) {
+  return `Immagine di copertina del progetto “${p.title}”`
+}
+
+async function getProjects() {
   loading.value = true
   error.value = null
   try {
@@ -84,35 +98,29 @@ async function getProjects () {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  getProjects()
-})
 </script>
 
 <template>
   <main class="page-content" aria-labelledby="page-title">
     <div class="projects-container flex flex-col items-center py-4">
 
-      <section class="hero-container relative w-full h-[400px] overflow-hidden">
+      <section class="hero-container relative w-full overflow-hidden">
         <div class="hero-image-container absolute inset-0" aria-hidden="true"></div>
         <div class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]">
           <h1 id="page-title">Progetti Digitali</h1>
         </div>
       </section>
 
-      <section class="filters-section w-full max-w-[1400px] px-[var(--margin-desktop)] mb-16 text-center">
+      <section class="filters-section w-full max-w-[1400px] px-[var(--margin-desktop)] mt-12 mb-16 text-center">
         <p class="filters-cta payoff mt-2 mb-6 opacity-90">Scegli l'ambito di tuo interesse</p>
-        
         <div class="filters-scroll-wrapper">
           <div class="filters-wrapper">
             <button 
               v-for="cat in filterOptions" 
-              :key="cat"
-              @click="setFilter(cat)"
+              :key="cat" 
+              @click="setFilter(cat)" 
               class="filter-btn"
-              :class="{ 'active': activeFilter === cat }"
+              :class="{ 'active': activeFilter === cat }" 
               :style="activeFilter === cat ? getFilterActiveStyle(cat) : {}"
             >
               {{ cat === 'All' ? 'Tutti i progetti' : cat }}
@@ -130,21 +138,22 @@ onMounted(() => {
         </div>
       </section>
 
-      <section v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-20 max-w-[1400px] w-full mt-0 mb-12">
+      <section v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-20 max-w-[1400px] w-full mt-0 mb-12 px-[var(--margin-desktop)]">
         <RouterLink
           v-for="p in filteredProjects"
           :key="p.firestoreId"
           class="project-item no-underline text-inherit flex flex-col items-center text-center cursor-pointer outline-none"
           :to="{ name: 'project-details', params: { id: p.firestoreId } }"
+          :aria-label="ariaLabelFor(p)"
         >
           <figure class="relative w-full aspect-[1200/800] overflow-hidden bg-[var(--color-surface)] m-0">
-            <img :src="p.img" :alt="p.title" class="w-full h-full object-cover transition-transform duration-200" />
+            <img :src="p.img" :alt="altFor(p)" class="w-full h-full object-cover transition-transform duration-200" />
             <figcaption class="cat-badge" :style="badgeStyle(p.category)">
               {{ p.category || 'Other' }}
             </figcaption>
           </figure>
           <h3 class="mt-4">{{ p.title }}</h3>
-          <ul v-if="p.tag?.length" class="list-none flex flex-wrap justify-center mt-2 gap-[0.35rem] p-0">
+          <ul v-if="p.tag?.length" class="list-none flex flex-wrap justify-center mt-2 gap-2 p-0">
             <li v-for="tag in p.tag" :key="tag" class="tag pill" :style="badgeStyle(p.category)">
               {{ tag }}
             </li>
@@ -156,69 +165,28 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.filters-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.filters-cta {
-  font-family: var(--font-body);
-  font-weight: 400;
-  color: var(--color-text);
-  font-size: 1.1rem;
-}
-
-.filters-scroll-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-block: 8px; /* Spazio extra per far respirare il bordo */
-}
+/* --- FILTRI --- */
+.filters-section { display: flex; flex-direction: column; align-items: center; }
+.filters-cta { font-family: var(--font-body); font-weight: 400; font-size: 1.1rem; }
+.filters-scroll-wrapper { width: 100%; overflow-x: auto; scrollbar-width: none; padding-block: 8px; }
 .filters-scroll-wrapper::-webkit-scrollbar { display: none; }
-
-.filters-wrapper {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: 0.8rem;
-  padding-inline: 10px;
-}
+.filters-wrapper { display: flex; flex-wrap: nowrap; justify-content: center; gap: 0.8rem; padding-inline: 10px; }
 
 .filter-btn {
-  background: transparent;
-  border: none;
-  font-family: var(--font-body);
-  font-weight: 400;
-  color: var(--color-accent);
-  font-size: 1rem;
-  padding: 6px 14px;
-  cursor: pointer;
-  border-radius: 999px;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  /* Box shadow trasparente per gestire la transizione */
-  box-shadow: 0 0 0 2px transparent;
+  background: transparent; border: none; font-family: var(--font-body); color: var(--color-accent);
+  font-size: 1rem; padding: 6px 14px; cursor: pointer; border-radius: 999px; transition: all 0.25s ease; white-space: nowrap;
 }
+.filter-btn.active { font-weight: 700; }
 
-.filter-btn:hover {
-  font-weight: 700;
+/* --- HERO (DESKTOP) --- */
+.hero-container {
+  height: 400px;
 }
-
-.filter-btn.active {
-  font-weight: 700;
-  opacity: 1;
-  /* Lo stile specifico (ombra colorata) è iniettato da getFilterActiveStyle */
-}
-
-/* Layout esistenti */
-.projects-container { padding-inline: var(--margin-desktop); }
 
 .hero-image-container {
   background-image: url('/images/projects/copertina/project_lightmode.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-size: contain; 
+  background-repeat: no-repeat; 
   background-position: right center;
 }
 
@@ -226,24 +194,52 @@ body.dark-mode .hero-image-container {
   background-image: url('/images/projects/copertina/project_darkmode.png');
 }
 
-.header-content-wrapper h1 { font-size: 64pt; line-height: 1.1; }
+.header-content-wrapper h1 { font-size: 64pt; line-height: 1.1; color: var(--color-accent); }
 
-.cat-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: var(--font-body);
-}
-
-.pill { padding: 6px 12px; border-radius: 999px; border: 1px solid currentColor; font-size: 0.85rem; }
-
+/* --- RESPONSIVE MOBILE --- */
 @media (max-width: 768px) {
-  .projects-container { padding-inline: var(--margin-mobile); }
-  .header-content-wrapper h1 { font-size: 28pt; }
+  .hero-container {
+    height: auto; 
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .hero-image-container {
+    position: relative; 
+    width: 100%;
+    height: 250px; 
+    background-position: center; 
+    background-size: contain;
+    margin-bottom: 20px;
+    transform: none; /* Rimuoviamo eventuali trasformazioni desktop */
+  }
+
+  .header-content-wrapper {
+    position: relative;
+    top: 0;
+    transform: none;
+    padding-inline: var(--margin-mobile);
+    margin-bottom: 40px;
+  }
+
+  .header-content-wrapper h1 { 
+    font-size: 28pt; 
+    line-height: 1.2;
+  }
+
   .filters-wrapper { justify-content: flex-start; }
 }
+
+/* --- CARDS & PILLS --- */
+.cat-badge {
+  position: absolute; top: 10px; left: 10px; padding: 7px 14px; border-radius: 999px;
+  font-size: 0.9rem; font-family: var(--font-body); line-height: 1; border: 1px solid currentColor;
+}
+.pill { padding: 7px 14px; border-radius: 999px; border: 1px solid currentColor; font-size: 0.9rem; line-height: 1; }
+
+/* --- UTILS --- */
+@keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 0.3; } 100% { opacity: 0.6; } }
+.skeleton-box { background: currentColor; opacity: 0.1; animation: pulse 1.6s infinite; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 </style>
