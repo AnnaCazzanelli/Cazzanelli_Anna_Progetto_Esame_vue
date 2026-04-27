@@ -1,10 +1,8 @@
 <script setup>
 /* ==========================================================================
-   Stato e dati
-   - projects: elenco dei progetti caricati da Firestore.
-   - loading / error: gestione stato UI.
+   Import e Stato
    ========================================================================== */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { db } from '@/firebase/config'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 
@@ -12,22 +10,50 @@ const projects = ref([])
 const loading  = ref(true)
 const error    = ref(null)
 
-/* ==========================================================================
-   Scroll iniziale
-   - Garantisce l’avvio view dall’inizio pagina
-   ========================================================================== */
-window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+// Stato del filtro attivo
+const activeFilter = ref('All')
 
 /* ==========================================================================
-   Stile badge per categoria
-   - Mappa colori per categorie note + fallback "Other".
-   - badgeStyle: restituisce uno style inline coerente con la categoria.
+   Configurazione Categorie e Colori
    ========================================================================== */
 const CATEGORY_COLORS = {
-  'Art Direction': { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
-  'Web design':    { bg: '#e7f5ff', bd: '#74c0fc', fg: '#1c4f80' },
-  'Copywriting':   { bg: '#ffe3e3', bd: '#ffa8a8', fg: '#7a1f1f' },
+  'Visual Design': { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
+  'Web Design':    { bg: '#e7f5ff', bd: '#74c0fc', fg: '#1c4f80' },
+  'Communication': { bg: '#ffe3e3', bd: '#ffa8a8', fg: '#7a1f1f' },
+  'Case Studies':  { bg: '#e6f4ea', bd: '#81c995', fg: '#137333' },
   Other:           { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' }
+}
+
+const filterOptions = ['All', 'Web Design', 'Visual Design', 'Communication', 'Case Studies'];
+
+/* ==========================================================================
+   Logica di Filtraggio e Stili Dinamici (Fix Spazio Bianco)
+   ========================================================================== */
+const filteredProjects = computed(() => {
+  if (activeFilter.value === 'All') return projects.value
+  return projects.value.filter(p => p.category === activeFilter.value)
+})
+
+function setFilter(filter) {
+  activeFilter.value = filter
+}
+
+// Calcola lo stile del filtro attivo usando box-shadow invece di outline
+function getFilterActiveStyle(category) {
+  if (category === 'All') {
+    return {
+      backgroundColor: 'rgba(var(--accent-rgb), 0.15)',
+      color: 'var(--color-accent)',
+      boxShadow: '0 0 0 2px var(--color-accent)' // Ombra netta che aderisce perfettamente
+    };
+  }
+  const c = CATEGORY_COLORS[category];
+  if (!c) return {};
+  return {
+    backgroundColor: c.bg,
+    color: c.fg,
+    boxShadow: `0 0 0 2px ${c.bd}` // Bordo perfetto senza spazi bianchi
+  };
 }
 
 function badgeStyle (category) {
@@ -40,26 +66,7 @@ function badgeStyle (category) {
 }
 
 /* ==========================================================================
-   Accessibilità: 
-   - ariaLabelFor: etichetta descrittiva del link al progetto.
-   - altFor: descrizione immagine di copertina.
-   ========================================================================== */
-function ariaLabelFor (p) {
-  const cat  = p.category || 'Categoria non specificata'
-  const tags = Array.isArray(p.tag) && p.tag.length
-    ? `. Tag: ${p.tag.join(', ')}.`
-    : ''
-  return `Apri il progetto “${p.title}”. Categoria: ${cat}${tags}`
-}
-
-function altFor (p) {
-  return `Immagine di copertina del progetto “${p.title}”`
-}
-
-/* ==========================================================================
    Fetch dati
-   - getProjects: lettura ordinata per campo "order".
-   - Gestione errori con messaggio utente.
    ========================================================================== */
 async function getProjects () {
   loading.value = true
@@ -78,11 +85,6 @@ async function getProjects () {
   }
 }
 
-/* ==========================================================================
-   Lifecycle
-   - Scroll all’inizio pagina.
-   - Avvio fetch iniziale.
-   ========================================================================== */
 onMounted(() => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   getProjects()
@@ -91,267 +93,157 @@ onMounted(() => {
 
 <template>
   <main class="page-content" aria-labelledby="page-title">
-
-    <!-- Contenitore principale: colonna, centrato, padding verticale -->
     <div class="projects-container flex flex-col items-center py-4">
 
-      <!-- HERO-->
-      <section
-        class="hero-container relative w-full h-[400px] overflow-hidden"
-        role="region"
-        aria-labelledby="page-title"
-      >
-        <!-- Immagine hero -->
+      <section class="hero-container relative w-full h-[400px] overflow-hidden">
         <div class="hero-image-container absolute inset-0" aria-hidden="true"></div>
-
-        <!-- Titolo: centratura verticale e padding inline responsivo -->
-        <div
-          class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]"
-        >
+        <div class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]">
           <h1 id="page-title">Progetti Digitali</h1>
         </div>
       </section>
 
-      <!-- Messaggio errore -->
-      <p v-if="error" class="text-[#d00] my-2" role="alert">
-        {{ error }}
-      </p>
-
-      <!-- SKELETON: placeholder griglia durante il caricamento -->
-      <section
-        v-if="loading"
-        role="list"
-        aria-busy="true"
-        aria-labelledby="page-subtitle"
-        class="grid grid-cols-1 md:grid-cols-2
-               gap-x-8 gap-y-16 md:gap-y-20 phone:gap-y-28
-               max-w-[1400px] w-full mt-0 mb-12"
-      >
-        <div
-          v-for="n in 4"
-          :key="n"
-          class="project-item skeleton flex flex-col items-center text-center"
-          role="listitem"
-          aria-hidden="true"
-        >
-          <div
-            class="relative w-full aspect-[1200/800] overflow-hidden bg-[var(--color-surface)] m-0 skeleton-box"
-          >
-            <span class="cat-badge skeleton-pill absolute top-[10px] left-[10px]"></span>
-          </div>
-
-          <div class="skeleton-line title"></div>
-
-          <div class="flex flex-wrap justify-center mt-2 gap-1">
-            <span v-for="i in 3" :key="i" class="tag skeleton-pill"></span>
+      <section class="filters-section w-full max-w-[1400px] px-[var(--margin-desktop)] mb-16 text-center">
+        <p class="filters-cta payoff mt-2 mb-6 opacity-90">Scegli l'ambito di tuo interesse</p>
+        
+        <div class="filters-scroll-wrapper">
+          <div class="filters-wrapper">
+            <button 
+              v-for="cat in filterOptions" 
+              :key="cat"
+              @click="setFilter(cat)"
+              class="filter-btn"
+              :class="{ 'active': activeFilter === cat }"
+              :style="activeFilter === cat ? getFilterActiveStyle(cat) : {}"
+            >
+              {{ cat === 'All' ? 'Tutti i progetti' : cat }}
+            </button>
           </div>
         </div>
       </section>
 
-      <!-- GRID: elenco progetti -->
-      <section
-        v-else
-        role="list"
-        aria-labelledby="page-subtitle"
-        class="grid grid-cols-1 md:grid-cols-2
-               gap-x-8 gap-y-16 md:gap-y-20 phone:gap-y-28
-               max-w-[1400px] w-full mt-0 mb-12"
-      >
+      <p v-if="error" class="text-[#d00] my-2" role="alert">{{ error }}</p>
+
+      <section v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 max-w-[1400px] w-full mt-0 mb-12">
+        <div v-for="n in 4" :key="n" class="project-item skeleton flex flex-col items-center">
+          <div class="relative w-full aspect-[1200/800] bg-[var(--color-surface)] skeleton-box"></div>
+          <div class="skeleton-line title"></div>
+        </div>
+      </section>
+
+      <section v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-20 max-w-[1400px] w-full mt-0 mb-12">
         <RouterLink
-          v-for="p in projects"
+          v-for="p in filteredProjects"
           :key="p.firestoreId"
           class="project-item no-underline text-inherit flex flex-col items-center text-center cursor-pointer outline-none"
-          role="listitem"
           :to="{ name: 'project-details', params: { id: p.firestoreId } }"
-          :aria-label="ariaLabelFor(p)"
-          :title="`Apri: ${p.title}`"
         >
-          <figure
-            class="relative w-full aspect-[1200/800] overflow-hidden bg-[var(--color-surface)] m-0"
-          >
-            <img
-              :src="p.img"
-              :alt="altFor(p)"
-              class="w-full h-full object-cover transition-transform duration-200 ease-in-out"
-            />
-
-            <figcaption
-              class="cat-badge"
-              :style="badgeStyle(p.category)"
-              aria-hidden="true"
-            >
+          <figure class="relative w-full aspect-[1200/800] overflow-hidden bg-[var(--color-surface)] m-0">
+            <img :src="p.img" :alt="p.title" class="w-full h-full object-cover transition-transform duration-200" />
+            <figcaption class="cat-badge" :style="badgeStyle(p.category)">
               {{ p.category || 'Other' }}
             </figcaption>
           </figure>
-
-          <h3 class="mt-3">
-            {{ p.title }}
-          </h3>
-
-          <ul
-            v-if="p.tag?.length"
-            class="list-none flex flex-wrap justify-center mt-2 gap-[0.35rem] p-0"
-            aria-label="Tag del progetto"
-          >
-            <li
-              v-for="tag in p.tag"
-              :key="tag"
-              class="tag pill"
-              :style="badgeStyle(p.category)"
-            >
+          <h3 class="mt-4">{{ p.title }}</h3>
+          <ul v-if="p.tag?.length" class="list-none flex flex-wrap justify-center mt-2 gap-[0.35rem] p-0">
+            <li v-for="tag in p.tag" :key="tag" class="tag pill" :style="badgeStyle(p.category)">
               {{ tag }}
             </li>
           </ul>
         </RouterLink>
       </section>
     </div>
-
-    <!-- Annuncio di stato non visibile (screen reader) -->
-    <div class="sr-only" role="status" aria-live="polite">
-      {{ loading ? 'Caricamento progetti in corso…' : 'Elenco progetti caricato' }}
-    </div>
   </main>
 </template>
 
 <style scoped>
-
-/* Accessibilità: elemento solo-per-screen-reader */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Hero image light/dark mode */
+.filters-cta {
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.filters-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-block: 8px; /* Spazio extra per far respirare il bordo */
+}
+.filters-scroll-wrapper::-webkit-scrollbar { display: none; }
+
+.filters-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.8rem;
+  padding-inline: 10px;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--color-accent);
+  font-size: 1rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  /* Box shadow trasparente per gestire la transizione */
+  box-shadow: 0 0 0 2px transparent;
+}
+
+.filter-btn:hover {
+  font-weight: 700;
+}
+
+.filter-btn.active {
+  font-weight: 700;
+  opacity: 1;
+  /* Lo stile specifico (ombra colorata) è iniettato da getFilterActiveStyle */
+}
+
+/* Layout esistenti */
+.projects-container { padding-inline: var(--margin-desktop); }
+
 .hero-image-container {
   background-image: url('/images/projects/copertina/project_lightmode.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right center;
-  transform: translateY(-8%);
 }
 
 body.dark-mode .hero-image-container {
   background-image: url('/images/projects/copertina/project_darkmode.png');
 }
 
-/* ==========================================================================
-   Header (titolo) centrato verticalmente
-   - Padding inline responsivo per allineamento con margini globali.
-   ========================================================================== */
-.header-content-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  transform: translateY(-50%);
-  text-align: center;
-  width: 100%;
-  padding-inline: var(--margin-desktop);
-  box-sizing: border-box;
-}
+.header-content-wrapper h1 { font-size: 64pt; line-height: 1.1; }
 
-@media (max-width: 768px) {
-  .header-content-wrapper {
-    padding-inline: var(--margin-mobile);
-  }
-}
-
-/* Tipografia H1 su tablet/mobile (desktop gestito dai token) */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .header-content-wrapper h1 {
-    font-size: 40pt;
-    line-height: 50pt;
-  }
-}
-
-@media (max-width: 768px) {
-  .header-content-wrapper h1 {
-    font-size: 28pt;
-    line-height: 36pt;
-  }
-}
-
-/* ==========================================================================
-   Focus e hover card progetto
-   ========================================================================== */
-.project-item:focus-visible {
-  outline: 3px solid #94b7ff;
-  outline-offset: 4px;
-  border-radius: 10px;
-}
-
-.project-item:hover img {
-  transform: scale(1.01);
-}
-
-/* ==========================================================================
-   Badge categoria e tag
-   - cat-badge: pill decorativa posizionata sul media.
-   - .tag / .pill: stile per lista tag sotto il titolo.
-   ========================================================================== */
 .cat-badge {
   position: absolute;
   top: 10px;
   left: 10px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
   font-family: var(--font-body);
-  backdrop-filter: saturate(120%) blur(2px);
-  user-select: none;
 }
 
-.tag {
-  font-size: 0.85rem;
-}
+.pill { padding: 6px 12px; border-radius: 999px; border: 1px solid currentColor; font-size: 0.85rem; }
 
-.pill {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid currentColor;
-}
-
-/* ==========================================================================
-   Scheletro (loading state)
-   ========================================================================== */
-@keyframes pulse {
-  0%   { opacity: 0.6; }
-  50%  { opacity: 0.3; }
-  100% { opacity: 0.6; }
-}
-
-.skeleton {
-  pointer-events: none;
-}
-
-.skeleton-box,
-.skeleton-line,
-.skeleton-pill {
-  background: currentColor;
-  color: transparent;
-  opacity: 0.35;
-  animation: pulse 1.6s infinite ease-in-out;
-}
-
-.skeleton-line.title {
-  width: 60%;
-  height: 16px;
-  border-radius: 4px;
-  margin-top: 12px;
-}
-
-.skeleton-pill {
-  height: 18px;
-  border-radius: 9999px;
-  min-width: 56px;
-  display: inline-block;
+@media (max-width: 768px) {
+  .projects-container { padding-inline: var(--margin-mobile); }
+  .header-content-wrapper h1 { font-size: 28pt; }
+  .filters-wrapper { justify-content: flex-start; }
 }
 </style>
