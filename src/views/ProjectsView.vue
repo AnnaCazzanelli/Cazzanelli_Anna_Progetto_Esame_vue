@@ -180,7 +180,7 @@ async function getProjects() {
 
 /* --- HERO (DESKTOP) --- */
 .hero-container {
-  height: 400px;
+  height: 350px;
 }
 
 .hero-image-container {
