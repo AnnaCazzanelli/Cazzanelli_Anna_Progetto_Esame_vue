@@ -1,36 +1,69 @@
 <script setup>
-import { ref, onMounted, inject, nextTick } from 'vue'
+import { ref, onMounted, inject, nextTick, computed } from 'vue'
 import { collection, query, getDocs, orderBy } from 'firebase/firestore'
 
 /* Firestore via provide/inject */
 const db = inject('firestore')
 
-/* Elenco illustrazioni */
+/* Stato view */
 const illustrations = ref([])
+const activeFilter = ref('All')
 
 /* ==========================================================================
    Scroll iniziale
-   - Garantisce l’avvio view dall’inizio pagina
    ========================================================================== */
 window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 
-
-/* Stile badge per categoria */
+/* ==========================================================================
+   Configurazione Categorie e Colori
+   ========================================================================== */
 const CATEGORY_COLORS = {
-  'Lavoro su commissione': { bg: '#ffe3e9', bd: '#ffa8c0', fg: '#7a1f3a' },
-  'Progetto Personale':    { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
-  'Pubblicazione':         { bg: '#e5dbff', bd: '#b197fc', fg: '#3b2f7a' },
-  'Challenge Artistica':   { bg: '#f3e8ff', bd: '#d0b3ff', fg: '#4a1d7a' },
+  'Lavoro su commissione': { bg: '#fff0f6', bd: '#ff85c0', fg: '#9e1068' },
+  'Pubblicazione':         { bg: '#fff7e6', bd: '#ffa940', fg: '#ad4e00' },
+  'Challenge Artistica':   { bg: '#feffe6', bd: '#ffec3d', fg: '#856a00' },
+'Progetto Personale':    { bg: '#ebfaf5', bd: '#20b2aa', fg: '#006660' },
   Other:                   { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' }
 }
 
+const filterOptions = ['All', 'Lavoro su commissione', 'Pubblicazioni', 'Challenge Artistica', 'Progetto Personale'];
+
+/* ==========================================================================
+   Logica di Filtraggio e Normalizzazione
+   ========================================================================== */
 function normalizeCategory (raw) {
   const s = String(raw || '').trim()
   if (/commissione/i.test(s))   return 'Lavoro su commissione'
-  if (/personale/i.test(s))     return 'Progetto Personale'
   if (/pubblicazione/i.test(s)) return 'Pubblicazione'
   if (/challenge/i.test(s))     return 'Challenge Artistica'
+  if (/personale/i.test(s))     return 'Progetto Personale'
   return s in CATEGORY_COLORS ? s : 'Other'
+}
+
+const filteredIllustrations = computed(() => {
+  if (activeFilter.value === 'All') return illustrations.value
+  return illustrations.value.filter(item => normalizeCategory(item.category) === activeFilter.value)
+})
+
+function setFilter(filter) {
+  activeFilter.value = filter
+  // Riapplichiamo il tilt dopo che la griglia si è aggiornata
+  nextTick(applyTilt)
+}
+
+/* ==========================================================================
+   Stili Dinamici
+   ========================================================================== */
+function getFilterActiveStyle(category) {
+  if (category === 'All') {
+    return {
+      backgroundColor: 'rgba(var(--accent-rgb), 0.15)',
+      color: 'var(--color-accent)',
+      boxShadow: '0 0 0 2px var(--color-accent)'
+    };
+  }
+  const key = normalizeCategory(category)
+  const c = CATEGORY_COLORS[key];
+  return c ? { backgroundColor: c.bg, color: c.fg, boxShadow: `0 0 0 2px ${c.bd}` } : {};
 }
 
 function tagStyle (category) {
@@ -38,22 +71,15 @@ function tagStyle (category) {
   const c = CATEGORY_COLORS[key] || CATEGORY_COLORS.Other
   return {
     background: c.bg,
-    border:     `1px solid ${c.bd}`,
-    color:      c.fg
+    border: `1px solid ${c.bd}`,
+    color: c.fg
   }
 }
 
-/* Fetch illustrazioni e tilt decorativo */
-async function getIllustrations () {
-  const col = collection(db, 'illustrations')
-  const q   = query(col, orderBy('order', 'asc'))
-  const rs  = await getDocs(q)
-
-  const items = []
-  rs.forEach((doc) => items.push({ ...doc.data(), id: doc.id }))
-  illustrations.value = items
-
-  await nextTick()
+/* ==========================================================================
+   Fetch dati e Effetti
+   ========================================================================== */
+function applyTilt() {
   document.querySelectorAll('.illustration-item').forEach((el) => {
     const tilt = (Math.random() * 2.4 - 1.2).toFixed(2)
     el.style.setProperty('--tilt', `${tilt}deg`)
@@ -61,18 +87,29 @@ async function getIllustrations () {
   })
 }
 
-/*  Accessibilità: 
-   - ariaLabelFor: etichetta descrittiva del link al progetto.
-   - altFor: descrizione immagine di copertina. */
+async function getIllustrations () {
+  try {
+    const col = collection(db, 'illustrations')
+    const q   = query(col, orderBy('order', 'asc'))
+    const rs  = await getDocs(q)
+
+    const items = []
+    rs.forEach((doc) => items.push({ ...doc.data(), id: doc.id }))
+    illustrations.value = items
+
+    await nextTick()
+    applyTilt()
+  } catch (e) {
+    console.error("Errore caricamento illustrazioni:", e)
+  }
+}
+
+/* Accessibilità */
 function ariaLabelFor (item) {
-  const tags = Array.isArray(item.tag) && item.tag.length
-    ? `. Tag: ${item.tag.join(', ')}.`
-    : ''
+  const tags = Array.isArray(item.tag) && item.tag.length ? `. Tag: ${item.tag.join(', ')}.` : ''
   return `Apri l’illustrazione “${item.title}”${tags}`
 }
-function altFor (item) {
-  return `Illustrazione: ${item.title}`
-}
+function altFor (item) { return `Illustrazione: ${item.title}` }
 
 /* Lifecycle */
 onMounted(getIllustrations)
@@ -83,38 +120,42 @@ onMounted(getIllustrations)
     <div class="illustrations-container flex flex-col items-center py-4">
 
       <!-- HERO -->
-      <section
-        class="hero-container relative w-full h-[400px] overflow-hidden"
-        role="region"
-        aria-labelledby="page-title"
-      >
-
-      <!-- Immagine hero -->
+      <section class="hero-container relative w-full h-[400px] overflow-hidden">
         <div class="hero-image-container absolute inset-0" aria-hidden="true"></div>
-
-      <!-- Titolo: centratura verticale e padding inline responsivo -->
-        <div
-          class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]"
-        >
+        <div class="header-content-wrapper absolute inset-x-0 top-1/2 -translate-y-1/2 text-center w-full px-[var(--margin-desktop)]">
           <h1 id="page-title">Illustrazioni</h1>
+        </div>
+      </section>
+
+      <!-- FILTRI: Avvicinati al titolo -->
+      <section class="filters-section w-full max-w-[1400px] px-[var(--margin-desktop)] mt-2 mb-12 text-center">
+        <p class="filters-cta payoff mt-2 mb-6 opacity-90">Filtra per tipologia</p>
+        
+        <div class="filters-scroll-wrapper">
+          <div class="filters-wrapper">
+            <button 
+              v-for="cat in filterOptions" 
+              :key="cat"
+              @click="setFilter(cat)"
+              class="filter-btn"
+              :class="{ 'active': activeFilter === cat }"
+              :style="activeFilter === cat ? getFilterActiveStyle(cat) : {}"
+            >
+              {{ cat === 'All' ? 'Tutte' : cat }}
+            </button>
+          </div>
         </div>
       </section>
 
       <!-- GRID elenco illustrazioni -->
       <section class="illustration-content-wrapper w-full max-w-[1400px]">
-        <div
-          class="illustration-grid grid gap-12 py-8"
-          role="list"
-          aria-describedby="page-title"
-        >
+        <div class="illustration-grid grid gap-12 py-8" role="list">
           <RouterLink
-            v-for="illustration in illustrations"
+            v-for="illustration in filteredIllustrations"
             :key="illustration.id"
             class="illustration-item flex flex-col items-center text-center no-underline outline-none"
-            role="listitem"
             :to="{ name: 'illustration-details', params: { id: illustration.id } }"
             :aria-label="ariaLabelFor(illustration)"
-            :title="`Apri: ${illustration.title}`"
           >
             <figure class="media relative m-0">
               <img
@@ -124,23 +165,18 @@ onMounted(getIllustrations)
                 class="block max-w-full h-auto"
               />
               <figcaption
-                class="cat-badge absolute top-2.5 left-2.5 px-2.5 py-1 text-[0.75rem] font-semibold select-none"
+                class="cat-badge absolute top-2.5 left-2.5 px-2.5 py-1 text-[0.75rem] font-semibold"
                 :style="tagStyle(illustration.category)"
-                aria-hidden="true"
               >
                 {{ normalizeCategory(illustration.category) }}
               </figcaption>
             </figure>
 
             <div class="illustration-details flex flex-col items-center">
-              <h3 class="title mt-4 mb-2">
-                {{ illustration.title }}
-              </h3>
-
+              <h3 class="title mt-4 mb-2">{{ illustration.title }}</h3>
               <div
                 v-if="illustration.tag?.length"
                 class="illustration-tags flex flex-wrap justify-center gap-1.5 mt-2"
-                aria-label="Tag dell’illustrazione"
               >
                 <span
                   v-for="tag in illustration.tag"
@@ -160,176 +196,78 @@ onMounted(getIllustrations)
 </template>
 
 <style scoped>
+/* --- FILTRI --- */
+.filters-section { display: flex; flex-direction: column; align-items: center; }
+.filters-scroll-wrapper { width: 100%; overflow-x: auto; scrollbar-width: none; padding-block: 8px; }
+.filters-scroll-wrapper::-webkit-scrollbar { display: none; }
+.filters-wrapper { display: flex; flex-wrap: nowrap; gap: 0.8rem; padding-inline: 20px; justify-content: center; }
+.filters-cta { font-family: var(--font-body); font-weight: 400; font-size: 1.1rem; }
+@media (max-width: 768px) {
+  .filters-wrapper { justify-content: flex-start; }
+}
 
+.filter-btn {
+  background: transparent; border: none; font-family: var(--font-body); color: var(--color-accent);
+  padding: 6px 14px; cursor: pointer; border-radius: 999px; transition: all 0.25s ease; white-space: nowrap;
+}
+.filter-btn.active { font-weight: 700; }
 
-/* Hero: background image + dark mode */
+/* --- HERO --- */
 .hero-image-container {
   background-image: url('/images/illustration/copertina/illustration_lightmode.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: right center;
+  background-size: contain; background-repeat: no-repeat; background-position: right center;
   transform: translateY(-8%);
 }
 body.dark-mode .hero-image-container {
   background-image: url('/images/illustration/copertina/illustration_darkmode.png');
 }
 
-/* Wrapper titolo: centratura verticale e padding inline responsivo */
 .header-content-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  transform: translateY(-50%);
-  text-align: center;
-  width: 100%;
-  padding-inline: var(--margin-desktop);
-  box-sizing: border-box;
-}
-@media (max-width: 768px) {
-  .header-content-wrapper {
-    padding-inline: var(--margin-mobile);
-  }
+  position: absolute; top: 50%; width: 100%; transform: translateY(-50%); text-align: center;
+  padding-inline: var(--margin-desktop); box-sizing: border-box;
 }
 
-/* H1 responsivo su tablet/mobile (desktop via token) */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .header-content-wrapper h1 {
-    font-size: 40pt;
-    line-height: 50pt;
-  }
-}
 @media (max-width: 768px) {
-  .header-content-wrapper h1 {
-    font-size: 28pt;
-    line-height: 36pt;
-  }
+  .header-content-wrapper { padding-inline: var(--margin-mobile); }
+  .header-content-wrapper h1 { font-size: 28pt; line-height: 1.2; }
 }
 
-/* Griglia: 3/2/1 colonne con densità e fix ultimi elementi */
-.illustration-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-flow: dense;
-}
+/* --- GRID --- */
+.illustration-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: dense; }
+
 @media (min-width: 1200px) {
   .illustration-grid > .illustration-item:nth-child(8n + 1),
-  .illustration-grid > .illustration-item:nth-child(8n + 5) {
-    grid-column: span 2;
-  }
-  .illustration-grid > .illustration-item:last-child:nth-child(3n + 1) {
-    grid-column: 1 / -1 !important;
-  }
-  .illustration-grid > .illustration-item:nth-last-child(2):nth-child(3n + 1),
-  .illustration-grid > .illustration-item:last-child:nth-child(3n + 2) {
-    grid-column: span 1 !important;
-  }
+  .illustration-grid > .illustration-item:nth-child(8n + 5) { grid-column: span 2; }
 }
+
 @media (max-width: 1199px) and (min-width: 769px) {
-  .illustration-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .illustration-grid > .illustration-item:nth-child(6n + 1) {
-    grid-column: span 2;
-  }
-  .illustration-grid > .illustration-item:last-child:nth-child(2n + 1) {
-    grid-column: 1 / -1 !important;
-  }
+  .illustration-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .illustration-grid > .illustration-item:nth-child(6n + 1) { grid-column: span 2; }
 }
+
 @media (max-width: 768px) {
-  .illustration-grid {
-    grid-template-columns: 1fr;
-  }
+  .illustration-grid { grid-template-columns: 1fr; }
 }
 
-/* Card: base e focus */
-.illustration-item {
-  --tilt: 0deg;
-  --hover-tilt: 1.5deg;
-  --lift: 8px;
-  will-change: transform;
-}
-.illustration-item:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 6px;
-}
-
-/* Media: figura + immagine + badge categoria */
-.media {
-  transform: rotate(var(--tilt));
-  transition:
-    transform 220ms ease,
-    filter 220ms ease;
-}
-.media img {
+/* --- CARD EFFECTS --- */
+.illustration-item { --tilt: 0deg; --lift: 8px; will-change: transform; }
+.media { transform: rotate(var(--tilt)); transition: transform 220ms ease, filter 220ms ease; }
+.media img { 
   border: 1px solid rgba(var(--text-rgb) / 0.12);
-  box-shadow:
-    0 1px 2px rgba(var(--text-rgb) / 0.20),
-    0 8px 20px rgba(var(--text-rgb) / 0.12);
-  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(var(--text-rgb) / 0.20), 0 8px 20px rgba(var(--text-rgb) / 0.12);
 }
-.cat-badge {
-  border: 1px solid currentColor;
-  backdrop-filter: saturate(120%) blur(2px);
-  border-radius: 9999px;
-}
+.cat-badge { border: 1px solid currentColor; border-radius: 9999px; }
 
-/* Hover/focus: leggera rotazione, lift e lieve incremento di contrasto */
 .illustration-item:hover .media,
 .illustration-item:focus-visible .media {
-  transform:
-    rotate(calc(var(--tilt) + var(--hover-tilt)))
-    translateY(calc(-1 * var(--lift)))
-    scale(1.02);
+  transform: rotate(calc(var(--tilt) + var(--hover-tilt))) translateY(calc(-1 * var(--lift))) scale(1.02);
   filter: contrast(1.03) saturate(1.02);
 }
 
-/* Mobile: disattiva trasformazioni per stabilità */
 @media (max-width: 768px) {
-  .media {
-    transform: none !important;
-  }
-  .illustration-item:hover .media,
-  .illustration-item:focus-visible .media {
-    transform: none !important;
-    filter: none !important;
-  }
+  .media { transform: none !important; }
 }
 
-/* Tipografia titolo e stile tag */
-.title {
-  font-size: 18pt;
-  line-height: 27pt;
-}
-.tag {
-  border: 1px solid currentColor;
-  border-radius: 9999px;
-}
-
-/* Hero: fine-tuning su tablet e mobile */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .hero-image-container {
-    background-position: right center;
-    transform: translateY(-10%);
-    opacity: 0.95;
-  }
-}
-@media (max-width: 768px) {
-  .hero-image-container {
-    background-position: right top;
-    transform: translateY(-10%);
-    opacity: 0.9;
-  }
-}
-
-/* Reduced motion: rimuove animazioni/transizioni non essenziali */
-@media (prefers-reduced-motion: reduce) {
-  .media {
-    transition: none;
-  }
-  .illustration-item:hover .media,
-  .illustration-item:focus-visible .media {
-    transform: none;
-    filter: none;
-  }
-}
+.title { font-size: 18pt; line-height: 1.5; }
+.tag { border: 1px solid currentColor; border-radius: 9999px; }
 </style>
