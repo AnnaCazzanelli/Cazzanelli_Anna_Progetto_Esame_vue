@@ -19,7 +19,7 @@ window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
    ========================================================================== */
 const CATEGORY_COLORS = {
   'Lavoro su commissione': { bg: '#fff0f6', bd: '#ff85c0', fg: '#9e1068' },
-  'Pubblicazione':         { bg: '#fff7e6', bd: '#ffa940', fg: '#ad4e00' },
+  'Pubblicazioni':         { bg: '#fff7e6', bd: '#ffa940', fg: '#ad4e00' },
   'Challenge Artistica':   { bg: '#feffe6', bd: '#ffec3d', fg: '#856a00' },
 'Progetto Personale':    { bg: '#ebfaf5', bd: '#20b2aa', fg: '#006660' },
   Other:                   { bg: '#f1f3f5', bd: '#dee2e6', fg: '#212529' }
@@ -33,7 +33,7 @@ const filterOptions = ['All', 'Lavoro su commissione', 'Pubblicazioni', 'Challen
 function normalizeCategory (raw) {
   const s = String(raw || '').trim()
   if (/commissione/i.test(s))   return 'Lavoro su commissione'
-  if (/pubblicazione/i.test(s)) return 'Pubblicazione'
+  if (/pubblicazioni/i.test(s)) return 'Pubblicazioni'
   if (/challenge/i.test(s))     return 'Challenge Artistica'
   if (/personale/i.test(s))     return 'Progetto Personale'
   return s in CATEGORY_COLORS ? s : 'Other'
