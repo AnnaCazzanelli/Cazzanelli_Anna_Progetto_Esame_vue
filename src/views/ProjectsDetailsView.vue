@@ -48,7 +48,9 @@ const galleryPairs = computed(() => {
     .map((it) => {
       if (it && typeof it === 'object') {
         const hi = it.high_res?.trim?.() || it.low_res?.trim?.() || ''
-        const lo = isImgUrl(it.low_res) ? it.low_res.trim() : (isImgUrl(it.high_res) ? it.high_res.trim() : '')
+        const lo = isImgUrl(it.low_res) 
+          ? it.low_res.trim() 
+          : (isImgUrl(it.high_res) ? it.high_res.trim() : '')
         return { hi, lo }
       }
       if (typeof it === 'string') {
@@ -61,13 +63,12 @@ const galleryPairs = computed(() => {
 })
 
 /* ==========================================================================
-   Immagini per lo stage (Deduplicate)
+   Immagini per lo stage
    ========================================================================== */
 const images = computed(() => {
   if (!project.value) return []
   const out = []
   const added = new Set()
-
   const coverRaw = (project.value.main_image?.trim?.() || project.value.img || '').trim()
   
   if (isImgUrl(coverRaw)) {
@@ -90,14 +91,14 @@ const images = computed(() => {
 })
 
 /* ==========================================================================
-   Miniature immagini
+   Miniature immagini (Slider Logic)
    ========================================================================== */
 const thumbs = computed(() => {
   if (!project.value) return []
   const out = []
   const added = new Set()
-
   const loByKey = new Map()
+
   for (const p of galleryPairs.value) {
     const lo = isImgUrl(p.lo) ? p.lo : (isImgUrl(p.hi) ? p.hi : '')
     if (!lo) continue
@@ -125,7 +126,7 @@ const thumbs = computed(() => {
 })
 
 /* ==========================================================================
-   Viewer: navigazione e Auto-scroll miniature
+   Navigazione e Auto-scroll miniature
    ========================================================================== */
 const setActive = (i) => { activeIndex.value = i }
 const prev = () => { if (activeIndex.value > 0) activeIndex.value-- }
@@ -135,7 +136,10 @@ watch(activeIndex, async () => {
   const container = document.querySelector('.thumbs')
   const activeThumb = document.querySelector('.thumb.active')
   if (container && activeThumb) {
-    const scrollLeft = activeThumb.offsetLeft - container.offsetWidth / 2 + activeThumb.offsetWidth / 2
+    const scrollLeft = 
+      activeThumb.offsetLeft - 
+      container.offsetWidth / 2 + 
+      activeThumb.offsetWidth / 2
     container.scrollTo({ left: scrollLeft, behavior: 'smooth' })
   }
 })
@@ -148,7 +152,7 @@ const startY = ref(0)
 const deltaX = ref(0)
 const SWIPE = { threshold: 45, maxAngle: 60 }
 
-function onTouchStart (e) {
+function onTouchStart(e) {
   const t = e.changedTouches?.[0]
   if (!t) return
   startX.value = t.clientX
@@ -156,7 +160,7 @@ function onTouchStart (e) {
   deltaX.value = 0
 }
 
-function onTouchMove (e) {
+function onTouchMove(e) {
   const t = e.changedTouches?.[0]
   if (!t) return
   const dx = t.clientX - startX.value
@@ -164,9 +168,11 @@ function onTouchMove (e) {
   deltaX.value = dy < SWIPE.maxAngle ? dx : 0
 }
 
-function onTouchEnd () {
+function onTouchEnd() {
   const dx = deltaX.value
-  if (Math.abs(dx) >= SWIPE.threshold) { dx < 0 ? next() : prev() }
+  if (Math.abs(dx) >= SWIPE.threshold) { 
+    dx < 0 ? next() : prev() 
+  }
   deltaX.value = 0
 }
 
@@ -189,21 +195,32 @@ const tagStyle = computed(() => {
 /* ==========================================================================
    Fetch progetto
    ========================================================================== */
-async function fetchProject () {
+async function fetchProject() {
   loading.value = true
   notFound.value = false
   project.value = null
   activeIndex.value = 0
   const id = String(route.params.id || '').trim()
-  if (!id) { notFound.value = true; loading.value = false; return; }
+  
+  if (!id) { 
+    notFound.value = true
+    loading.value = false
+    return 
+  }
+  
   try {
     const snap = await getDoc(doc(db, 'projects', id))
-    if (!snap.exists()) { notFound.value = true; return; }
+    if (!snap.exists()) { 
+      notFound.value = true
+      return 
+    }
     project.value = { id: snap.id, ...snap.data() }
   } catch (e) {
-    console.error('Errore:', e)
+    console.error('Errore fetch progetto:', e)
     notFound.value = true
-  } finally { loading.value = false }
+  } finally { 
+    loading.value = false 
+  }
 }
 
 onMounted(fetchProject)
@@ -212,26 +229,40 @@ watch(() => route.params.id, fetchProject)
 
 <template>
   <main class="page bg-surface text-text">
-    <div v-if="loading" class="loading" role="status">Caricamento progetto…</div>
+    
+    <div v-if="loading" class="loading" role="status">
+      Caricamento progetto…
+    </div>
+
     <div v-else-if="notFound" class="notfound">
       <p>Progetto non trovato.</p>
       <RouterLink to="/projects" class="back-link">Torna ai progetti</RouterLink>
     </div>
 
     <div v-else-if="project" class="container">
+      
+      <!-- Pulsante Back -->
       <RouterLink to="/projects" class="back-btn" title="Torna ai progetti">
         <img src="/icone/icon-arrowsx.svg" alt="" class="icon" />
       </RouterLink>
 
-      <h1 class="title text-accent text-center">{{ project.title }}</h1>
+      <h1 class="title text-accent text-center">
+        {{ project.title }}
+      </h1>
 
+      <!-- Main Viewer -->
       <section class="viewer">
         <button class="nav" :disabled="activeIndex === 0" @click="prev">
           <img src="/icone/icon-prev.svg" alt="" class="icon" />
         </button>
 
         <div class="stage" tabindex="0" @touchstart.passive="onTouchStart" @touchmove.passive="onTouchMove" @touchend="onTouchEnd">
-          <img :src="images[activeIndex].src" :alt="images[activeIndex].alt" class="stage-img" loading="eager" />
+          <img 
+            :src="images[activeIndex].src" 
+            :alt="images[activeIndex].alt" 
+            class="stage-img" 
+            loading="eager" 
+          />
         </div>
 
         <button class="nav" :disabled="activeIndex === images.length - 1" @click="next">
@@ -239,7 +270,7 @@ watch(() => route.params.id, fetchProject)
         </button>
       </section>
 
-      <!-- MINIATURE SLIDER -->
+      <!-- Miniature Slider -->
       <section v-if="thumbs.length > 1" class="thumbs">
         <button
           v-for="(t, i) in thumbs"
@@ -252,83 +283,238 @@ watch(() => route.params.id, fetchProject)
         </button>
       </section>
 
+      <!-- Meta Info -->
       <section class="meta">
         <div class="col">
           <h3>Data</h3>
           <p v-if="project.year">{{ project.year }}</p>
+          
           <h3>Tipo di progetto</h3>
-          <p><span class="pill" :style="tagStyle">{{ project.category || 'Other' }}</span></p>
+          <p>
+            <span class="pill" :style="tagStyle">
+              {{ project.category || 'Other' }}
+            </span>
+          </p>
+          
           <h3>Tag</h3>
           <ul v-if="project.tag?.length" class="tags">
-            <li v-for="(t, i) in project.tag" :key="i" class="pill" :style="tagStyle">{{ t }}</li>
+            <li v-for="(t, i) in project.tag" :key="i" class="pill" :style="tagStyle">
+              {{ t }}
+            </li>
           </ul>
         </div>
+
         <div class="col">
           <h3>Description:</h3>
-          <p v-if="project.description" class="desc">
-            {{ project.description }}
+          <div v-if="project.description" class="desc">
+            <p>{{ project.description }}</p>
+            
             <div v-if="project.behance_url" class="behance-header-link">
               <a :href="project.behance_url" target="_blank" rel="noopener noreferrer" class="a-behance-link">
                 <img src="/icone/icon-behance.svg" alt="" class="behance-mini-icon" />
                 Scopri il video presentazione su Behance
               </a>
             </div>
-          </p>
+          </div>
         </div>
       </section>
+
     </div>
   </main>
 </template>
 
 <style scoped>
-.page { padding: 48px var(--margin-desktop) 112px; }
-.container { max-width: 1200px; margin: 0 auto; position: relative; }
-.back-btn { position: absolute; top: -60px; left: 0; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
-.back-btn .icon { width: 24px; height: 24px; }
-.title { font-size: clamp(32px, 4.2vw, 56px); margin: 56px 0 48px; }
+/* Layout Base */
+.page { 
+  padding: 48px var(--margin-desktop) 112px; 
+}
 
-/* VIEWER STAGE */
-.viewer { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 24px; margin-bottom: 24px; }
-.stage { width: 100%; aspect-ratio: 16/9; background: var(--color-surface); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.stage-img { width: 100%; height: 100%; object-fit: contain; }
-.nav { width: 48px; height: 48px; border: none; background: transparent; cursor: pointer; }
-.nav:disabled { opacity: 0.3; }
+.container { 
+  max-width: 1200px; 
+  margin: 0 auto; 
+  position: relative; 
+}
 
-/* MINIATURE SLIDER (La tua correzione estetica) */
+.back-btn { 
+  position: absolute; 
+  top: -60px; 
+  left: 0; 
+  width: 48px; 
+  height: 48px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+
+.back-btn .icon { 
+  width: 24px; 
+  height: 24px; 
+}
+
+/* Tipografia */
+.title { 
+  font-size: clamp(32px, 4.2vw, 56px); 
+  line-height: 1.1; 
+  margin: 56px 0 48px; 
+}
+
+/* Main Viewer (Stage) */
+.viewer { 
+  display: grid; 
+  grid-template-columns: 56px 1fr 56px; 
+  align-items: center; 
+  gap: 24px; 
+  margin-bottom: 56px; 
+}
+
+.stage { 
+  width: 100%; 
+  background: var(--color-surface); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden; 
+}
+
+.stage-img { 
+  height: clamp(360px, 62vh, 720px); 
+  width: auto; 
+  max-width: 100%; 
+  object-fit: contain; 
+  display: block; 
+}
+
+.nav { 
+  width: 48px; 
+  height: 48px; 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+}
+
+.nav:disabled { 
+  opacity: 0.3; 
+}
+
+/* Miniature Slider */
 .thumbs {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  padding: 20px 0;
-  margin: 0 80px 40px; /* Allineato allo stage */
+  display: flex; 
+  gap: 16px; 
+  align-items: center; 
+  overflow-x: auto; 
+  scroll-behavior: smooth; 
+  scrollbar-width: none; 
+  padding: 20px 0; 
+  margin: 40px 80px 40px; 
 }
-.thumbs::-webkit-scrollbar { display: none; }
+
+.thumbs::-webkit-scrollbar { 
+  display: none; 
+}
+
 .thumb {
-  flex: 0 0 110px;
-  height: 110px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e9ecef;
-  cursor: pointer;
-  padding: 0;
+  flex: 0 0 112px; 
+  height: 112px; 
+  border: 1px solid #e9ecef; 
+  border-radius: var(--border-radius-card);
+  overflow: hidden; 
+  background: var(--color-surface); 
+  cursor: pointer; 
+  padding: 0; 
+  opacity: 0.5; 
   transition: all 0.3s ease;
-  opacity: 0.5;
 }
-.thumb img { width: 100%; height: 100%; object-fit: cover; }
-.thumb.active { opacity: 1; border: 2px solid var(--color-accent); transform: scale(1.05); }
 
-/* META & PILLS */
-.meta { display: grid; grid-template-columns: 1fr 2fr; gap: 72px; padding-top: 40px; }
-.pill { padding: 8px 12px; border-radius: 999px; font-size: 0.95rem; border: 1px solid currentColor; }
-.tags { display: flex; gap: 12px; flex-wrap: wrap; list-style: none; padding: 0; }
+.thumb img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+}
 
+.thumb.active { 
+  opacity: 1; 
+  outline: 3px solid var(--color-accent); 
+  transform: scale(1.05); 
+}
+
+/* Metadati */
+.meta { 
+  display: grid; 
+  grid-template-columns: 1fr 2fr; 
+  gap: 72px; 
+  margin-top: 16px; 
+  padding-top: 40px; 
+}
+
+.meta h3 { 
+  font-size: clamp(20px, 1.9vw, 24px); 
+  margin: 0 0 16px; 
+  color: var(--color-accent); 
+}
+
+.desc, .meta .col p { 
+  font-size: clamp(15px, 1.05vw, 18px); 
+  line-height: 1.8; 
+  margin: 0 0 14px; 
+}
+
+.pill { 
+  padding: 8px 12px; 
+  border-radius: 999px; 
+  font-size: 0.95rem; 
+  border: 1px solid currentColor; 
+}
+
+.tags { 
+  display: flex; 
+  gap: 12px; 
+  flex-wrap: wrap; 
+  list-style: none; 
+  padding: 0; 
+}
+
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .viewer { grid-template-columns: 1fr; }
-  .nav { display: none; }
-  .thumbs { margin: 0 var(--margin-mobile) 32px; gap: 12px; }
-  .thumb { flex: 0 0 85px; height: 85px; }
-  .meta { grid-template-columns: 1fr; gap: 32px; }
+  .page { 
+    padding: 32px var(--margin-mobile) 96px; 
+  }
+  
+  .viewer { 
+    grid-template-columns: 1fr; 
+    gap: 16px; 
+    margin-bottom: 40px; 
+  }
+  
+  .nav { 
+    display: none; 
+  }
+  
+  .stage { 
+    min-height: 300px; 
+    padding: 8px 0; 
+  }
+  
+  .stage-img { 
+    width: 100%; 
+    height: auto; 
+    max-height: 70vh; 
+  }
+  
+  .thumbs { 
+    margin: 0 0 56px; 
+    gap: 16px; 
+  }
+  
+  .thumb { 
+    flex: 0 0 92px; 
+    height: 92px; 
+  }
+  
+  .meta { 
+    grid-template-columns: 1fr; 
+    gap: 28px; 
+    padding-top: 28px; 
+  }
 }
 </style>
