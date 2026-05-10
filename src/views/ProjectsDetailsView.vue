@@ -1,19 +1,19 @@
 <script setup>
 /* ==========================================================================
    Import e routing
-   ========================================================================== */
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+   ========================================================================= */
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 
 /* ==========================================================================
    Firestore
-   ========================================================================== */
+   ========================================================================= */
 import { db } from '@/firebase/config'
 import { doc, getDoc } from 'firebase/firestore'
 
 /* ==========================================================================
    Stato view
-   ========================================================================== */
+   ========================================================================= */
 const route = useRoute()
 const project = ref(null)
 const loading = ref(true)
@@ -22,7 +22,7 @@ const activeIndex = ref(0)
 
 /* ==========================================================================
    Helpers
-   ========================================================================== */
+   ========================================================================= */
 const isImgUrl = (u) =>
   typeof u === 'string' && /\.(webp|png|jpe?g|gif|avif)$/i.test((u || '').trim())
 
@@ -33,14 +33,12 @@ const normKey = (u) => {
   return file.replace(/\.(webp|png|jpe?g|gif|avif)$/i, '')
 }
 
-/* ==========================================================================
-   Scroll iniziale
-   ========================================================================== */
+/* Scroll iniziale */
 window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 
 /* ==========================================================================
-   Normalizzazione gallery
-   ========================================================================== */
+   Normalizzazione gallery e Immagini
+   ========================================================================= */
 const galleryPairs = computed(() => {
   const g = project.value?.gallery
   if (!Array.isArray(g)) return []
@@ -62,9 +60,6 @@ const galleryPairs = computed(() => {
     .filter((p) => p.hi || p.lo)
 })
 
-/* ==========================================================================
-   Immagini per lo stage
-   ========================================================================== */
 const images = computed(() => {
   if (!project.value) return []
   const out = []
@@ -74,8 +69,10 @@ const images = computed(() => {
   if (isImgUrl(coverRaw)) {
     const coverKey = normKey(coverRaw)
     const hiResMatch = galleryPairs.value.find(p => normKey(p.hi) === coverKey)
-    const finalCoverSrc = hiResMatch ? hiResMatch.hi : coverRaw
-    out.push({ src: finalCoverSrc, alt: `${project.value.title} – cover` })
+    out.push({ 
+      src: hiResMatch ? hiResMatch.hi : coverRaw, 
+      alt: `${project.value.title} – cover` 
+    })
     added.add(coverKey)
   }
 
@@ -83,16 +80,14 @@ const images = computed(() => {
     const src = p.hi?.trim()
     if (!isImgUrl(src)) continue
     const key = normKey(src)
-    if (added.has(key)) continue
-    out.push({ src, alt: `${project.value.title} – immagine` })
-    added.add(key)
+    if (!added.has(key)) {
+      out.push({ src, alt: `${project.value.title} – immagine` })
+      added.add(key)
+    }
   }
   return out
 })
 
-/* ==========================================================================
-   Miniature immagini (Slider Logic)
-   ========================================================================== */
 const thumbs = computed(() => {
   if (!project.value) return []
   const out = []
@@ -101,8 +96,7 @@ const thumbs = computed(() => {
 
   for (const p of galleryPairs.value) {
     const lo = isImgUrl(p.lo) ? p.lo : (isImgUrl(p.hi) ? p.hi : '')
-    if (!lo) continue
-    loByKey.set(normKey(p.hi || lo), lo)
+    if (lo) loByKey.set(normKey(p.hi || lo), lo)
   }
 
   const cover = (project.value.main_image?.trim?.() || project.value.img || '').trim()
@@ -116,18 +110,17 @@ const thumbs = computed(() => {
 
   for (const p of galleryPairs.value) {
     const candidate = isImgUrl(p.lo) ? p.lo : (isImgUrl(p.hi) ? p.hi : '')
-    if (!candidate) continue
-    const key = normKey(candidate)
-    if (added.has(key)) continue
-    out.push({ src: candidate, alt: `${project.value.title} – miniatura` })
-    added.add(key)
+    if (candidate && !added.has(normKey(candidate))) {
+      out.push({ src: candidate, alt: `${project.value.title} – miniatura` })
+      added.add(normKey(candidate))
+    }
   }
   return out
 })
 
 /* ==========================================================================
    Navigazione e Auto-scroll miniature
-   ========================================================================== */
+   ========================================================================= */
 const setActive = (i) => { activeIndex.value = i }
 const prev = () => { if (activeIndex.value > 0) activeIndex.value-- }
 const next = () => { if (activeIndex.value < images.value.length - 1) activeIndex.value++ }
@@ -136,49 +129,35 @@ watch(activeIndex, async () => {
   const container = document.querySelector('.thumbs')
   const activeThumb = document.querySelector('.thumb.active')
   if (container && activeThumb) {
-    const scrollLeft = 
-      activeThumb.offsetLeft - 
-      container.offsetWidth / 2 + 
-      activeThumb.offsetWidth / 2
+    const scrollLeft = activeThumb.offsetLeft - container.offsetWidth / 2 + activeThumb.offsetWidth / 2
     container.scrollTo({ left: scrollLeft, behavior: 'smooth' })
   }
 })
 
 /* ==========================================================================
    Swipe touch
-   ========================================================================== */
+   ========================================================================= */
 const startX = ref(0)
-const startY = ref(0)
 const deltaX = ref(0)
-const SWIPE = { threshold: 45, maxAngle: 60 }
 
-function onTouchStart(e) {
-  const t = e.changedTouches?.[0]
-  if (!t) return
-  startX.value = t.clientX
-  startY.value = t.clientY
-  deltaX.value = 0
+const onTouchStart = (e) => { 
+  startX.value = e.changedTouches[0].clientX
+  deltaX.value = 0 
 }
 
-function onTouchMove(e) {
-  const t = e.changedTouches?.[0]
-  if (!t) return
-  const dx = t.clientX - startX.value
-  const dy = Math.abs(t.clientY - startY.value)
-  deltaX.value = dy < SWIPE.maxAngle ? dx : 0
+const onTouchMove = (e) => { 
+  deltaX.value = e.changedTouches[0].clientX - startX.value 
 }
 
-function onTouchEnd() {
-  const dx = deltaX.value
-  if (Math.abs(dx) >= SWIPE.threshold) { 
-    dx < 0 ? next() : prev() 
-  }
-  deltaX.value = 0
+const onTouchEnd = () => { 
+  if (Math.abs(deltaX.value) > 45) { 
+    deltaX.value < 0 ? next() : prev() 
+  } 
 }
 
 /* ==========================================================================
    Stile pill categoria 
-   ========================================================================== */
+   ========================================================================= */
 const CATEGORY_COLORS = {
   'Art Direction': { bg: '#fff3bf', bd: '#ffd43b', fg: '#7a5b00' },
   'Web design':     { bg: '#e7f5ff', bd: '#74c0fc', fg: '#1c4f80' },
@@ -194,19 +173,13 @@ const tagStyle = computed(() => {
 
 /* ==========================================================================
    Fetch progetto
-   ========================================================================== */
+   ========================================================================= */
 async function fetchProject() {
   loading.value = true
   notFound.value = false
   project.value = null
   activeIndex.value = 0
   const id = String(route.params.id || '').trim()
-  
-  if (!id) { 
-    notFound.value = true
-    loading.value = false
-    return 
-  }
   
   try {
     const snap = await getDoc(doc(db, 'projects', id))
@@ -216,10 +189,9 @@ async function fetchProject() {
     }
     project.value = { id: snap.id, ...snap.data() }
   } catch (e) {
-    console.error('Errore fetch progetto:', e)
     notFound.value = true
-  } finally { 
-    loading.value = false 
+  } finally {
+    loading.value = false
   }
 }
 
@@ -230,93 +202,120 @@ watch(() => route.params.id, fetchProject)
 <template>
   <main class="page bg-surface text-text">
     
-    <div v-if="loading" class="loading" role="status">
+    <div v-if="loading" class="loading py-40 text-center opacity-80">
       Caricamento progetto…
     </div>
 
-    <div v-else-if="notFound" class="notfound">
+    <div v-else-if="notFound" class="notfound py-40 text-center opacity-80">
       <p>Progetto non trovato.</p>
-      <RouterLink to="/projects" class="back-link">Torna ai progetti</RouterLink>
+      <RouterLink to="/projects" class="back-link text-accent">Torna ai progetti</RouterLink>
     </div>
 
-    <div v-else-if="project" class="container">
+    <div v-else-if="project" class="container max-w-[1200px] mx-auto relative">
       
-      <!-- Pulsante Back -->
-      <RouterLink to="/projects" class="back-btn" title="Torna ai progetti">
-        <img src="/icone/icon-arrowsx.svg" alt="" class="icon" />
+      <RouterLink 
+        to="/projects" 
+        class="back-btn absolute -top-[60px] left-0 w-12 h-12 inline-flex items-center justify-center transition hover:bg-black/5 dark:hover:bg-white/10"
+        aria-label="Torna alla lista progetti"
+        title="Torna alla lista progetti"
+      >
+        <img src="/icone/icon-arrowsx.svg" alt="" aria-hidden="true" class="icon w-6 h-6" />
       </RouterLink>
 
-      <h1 class="title text-accent text-center">
-        {{ project.title }}
-      </h1>
+      <h1 class="title text-accent text-center">{{ project.title }}</h1>
 
-      <!-- Main Viewer -->
-      <section class="viewer">
-        <button class="nav" :disabled="activeIndex === 0" @click="prev">
-          <img src="/icone/icon-prev.svg" alt="" class="icon" />
+      <section class="viewer grid grid-cols-[48px_1fr_48px] items-center gap-6 mb-14">
+        
+        <button 
+          class="nav w-12 h-12 inline-flex items-center justify-center transition disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/10" 
+          :disabled="activeIndex === 0" 
+          @click="prev"
+          aria-label="Immagine precedente"
+          title="Immagine precedente"
+        >
+          <img src="/icone/icon-prev.svg" alt="" aria-hidden="true" class="w-6 h-6" />
         </button>
 
-        <div class="stage" tabindex="0" @touchstart.passive="onTouchStart" @touchmove.passive="onTouchMove" @touchend="onTouchEnd">
+        <div 
+          class="stage bg-surface grid place-items-center overflow-hidden" 
+          @touchstart.passive="onTouchStart" 
+          @touchmove.passive="onTouchMove" 
+          @touchend="onTouchEnd"
+        >
           <img 
             :src="images[activeIndex].src" 
             :alt="images[activeIndex].alt" 
-            class="stage-img" 
+            class="stage-img block h-[clamp(360px,62vh,720px)] w-auto max-w-full object-contain" 
             loading="eager" 
           />
         </div>
 
-        <button class="nav" :disabled="activeIndex === images.length - 1" @click="next">
-          <img src="/icone/icon-next.svg" alt="" class="icon" />
-        </button>
-      </section>
-
-      <!-- Miniature Slider -->
-      <section v-if="thumbs.length > 1" class="thumbs">
-        <button
-          v-for="(t, i) in thumbs"
-          :key="t.src + i"
-          class="thumb"
-          :class="{ active: i === activeIndex }"
-          @click="setActive(i)"
+        <button 
+          class="nav w-12 h-12 inline-flex items-center justify-center transition disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/10" 
+          :disabled="activeIndex === images.length - 1" 
+          @click="next"
+          aria-label="Immagine successiva"
+          title="Immagine successiva"
         >
-          <img :src="t.src" :alt="t.alt" loading="lazy" />
+          <img src="/icone/icon-next.svg" alt="" aria-hidden="true" class="w-6 h-6" />
+        </button>
+
+      </section>
+
+      <section v-if="thumbs.length > 1" class="thumbs flex gap-4 overflow-x-auto scroll-smooth no-scrollbar mb-14 px-20">
+        <button 
+          v-for="(t, i) in thumbs" 
+          :key="t.src + i" 
+          class="thumb flex-shrink-0 w-[112px] h-[112px] rounded-lg overflow-hidden border-2 transition opacity-50" 
+          :class="{ 'active opacity-100 border-[var(--color-accent)] scale-105': i === activeIndex }" 
+          @click="setActive(i)"
+          :aria-label="'Mostra immagine ' + (i + 1)"
+          :title="'Mostra immagine ' + (i + 1)"
+        >
+          <img :src="t.src" :alt="t.alt" class="w-full h-full object-cover" />
         </button>
       </section>
 
-      <!-- Meta Info -->
-      <section class="meta">
+      <section class="meta grid grid-cols-[1fr_2fr] gap-[72px] pt-10 border-t border-black/5 dark:border-white/5">
+        
         <div class="col">
-          <h3>Data</h3>
+          <h3 class="text-accent">Data</h3>
           <p v-if="project.year">{{ project.year }}</p>
           
-          <h3>Tipo di progetto</h3>
-          <p>
-            <span class="pill" :style="tagStyle">
-              {{ project.category || 'Other' }}
-            </span>
-          </p>
-          
-          <h3>Tag</h3>
-          <ul v-if="project.tag?.length" class="tags">
+          <h3 class="text-accent mt-6">Tipo di progetto</h3>
+          <p><span class="pill inline-block" :style="tagStyle">{{ project.category || 'Other' }}</span></p>
+
+          <h3 class="text-accent mt-6">Tag</h3>
+          <ul v-if="project.tag?.length" class="tags flex flex-wrap gap-3 list-none p-0">
             <li v-for="(t, i) in project.tag" :key="i" class="pill" :style="tagStyle">
               {{ t }}
             </li>
           </ul>
+
+          <h3 class="text-accent mt-6">Tecnica (Tools)</h3>
+          <p v-if="project.tools">{{ project.tools }}</p>
+          <p v-else class="opacity-50">Dati non disponibili</p>
         </div>
 
         <div class="col">
-          <h3>Description:</h3>
-          <div v-if="project.description" class="desc">
+          <h3 class="text-accent">Description:</h3>
+          <div v-if="project.description" class="desc leading-relaxed">
             <p>{{ project.description }}</p>
             
-            <div v-if="project.behance_url" class="behance-header-link">
-              <a :href="project.behance_url" target="_blank" rel="noopener noreferrer" class="a-behance-link">
-                <img src="/icone/icon-behance.svg" alt="" class="behance-mini-icon" />
-                Scopri il video presentazione su Behance
+            <div v-if="project.behance_url" class="mt-8">
+              <a 
+                :href="project.behance_url" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="behance-link"
+              >
+                <img src="/icone/icon-behance.svg" alt="" aria-hidden="true" class="w-4 h-4" />
+                <span>Scopri il video presentazione su Behance</span>
               </a>
             </div>
           </div>
         </div>
+
       </section>
 
     </div>
@@ -324,197 +323,67 @@ watch(() => route.params.id, fetchProject)
 </template>
 
 <style scoped>
-/* Layout Base */
+/* Behance Style */
+.behance-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+  font-size: 14px;
+}
+
+.behance-link:hover {
+  color: var(--color-hover);
+}
+
+/* Layout */
 .page { 
   padding: 48px var(--margin-desktop) 112px; 
 }
 
-.container { 
-  max-width: 1200px; 
-  margin: 0 auto; 
-  position: relative; 
-}
-
-.back-btn { 
-  position: absolute; 
-  top: -60px; 
-  left: 0; 
-  width: 48px; 
-  height: 48px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-}
-
-.back-btn .icon { 
-  width: 24px; 
-  height: 24px; 
-}
-
-/* Tipografia */
 .title { 
   font-size: clamp(32px, 4.2vw, 56px); 
   line-height: 1.1; 
   margin: 56px 0 48px; 
 }
 
-/* Main Viewer (Stage) */
-.viewer { 
-  display: grid; 
-  grid-template-columns: 56px 1fr 56px; 
-  align-items: center; 
-  gap: 24px; 
-  margin-bottom: 56px; 
-}
-
-.stage { 
-  width: 100%; 
-  background: var(--color-surface); 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  overflow: hidden; 
-}
-
-.stage-img { 
-  height: clamp(360px, 62vh, 720px); 
-  width: auto; 
-  max-width: 100%; 
-  object-fit: contain; 
-  display: block; 
-}
-
-.nav { 
-  width: 48px; 
-  height: 48px; 
-  border: none; 
-  background: transparent; 
-  cursor: pointer; 
-}
-
-.nav:disabled { 
-  opacity: 0.3; 
-}
-
-/* Miniature Slider */
-.thumbs {
-  display: flex; 
-  gap: 16px; 
-  align-items: center; 
-  overflow-x: auto; 
-  scroll-behavior: smooth; 
-  scrollbar-width: none; 
-  padding: 20px 0; 
-  margin: 40px 80px 40px; 
-}
-
-.thumbs::-webkit-scrollbar { 
+.no-scrollbar::-webkit-scrollbar { 
   display: none; 
 }
 
-.thumb {
-  flex: 0 0 112px; 
-  height: 112px; 
-  border: 1px solid #e9ecef; 
-  border-radius: var(--border-radius-card);
-  overflow: hidden; 
-  background: var(--color-surface); 
-  cursor: pointer; 
-  padding: 0; 
-  opacity: 0.5; 
-  transition: all 0.3s ease;
+.no-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
 }
 
-.thumb img { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
-  display: block; 
-}
-
-.thumb.active { 
-  opacity: 1; 
-  outline: 3px solid var(--color-accent); 
-  transform: scale(1.05); 
-}
-
-/* Metadati */
-.meta { 
-  display: grid; 
-  grid-template-columns: 1fr 2fr; 
-  gap: 72px; 
-  margin-top: 16px; 
-  padding-top: 40px; 
-}
-
+/* Tipografia Meta */
 .meta h3 { 
   font-size: clamp(20px, 1.9vw, 24px); 
-  margin: 0 0 16px; 
-  color: var(--color-accent); 
+  margin-bottom: 12px; 
+  font-weight: 700; 
 }
 
-.desc, .meta .col p { 
+.desc p, .col p { 
   font-size: clamp(15px, 1.05vw, 18px); 
   line-height: 1.8; 
-  margin: 0 0 14px; 
+  margin-bottom: 14px; 
 }
 
 .pill { 
-  padding: 8px 12px; 
+  padding: 8px 16px; 
   border-radius: 999px; 
   font-size: 0.95rem; 
+  line-height: 1; 
   border: 1px solid currentColor; 
 }
 
-.tags { 
-  display: flex; 
-  gap: 12px; 
-  flex-wrap: wrap; 
-  list-style: none; 
-  padding: 0; 
-}
-
-/* Mobile Responsiveness */
+/* Responsiveness */
 @media (max-width: 768px) {
-  .page { 
-    padding: 32px var(--margin-mobile) 96px; 
-  }
-  
-  .viewer { 
-    grid-template-columns: 1fr; 
-    gap: 16px; 
-    margin-bottom: 40px; 
-  }
-  
-  .nav { 
-    display: none; 
-  }
-  
-  .stage { 
-    min-height: 300px; 
-    padding: 8px 0; 
-  }
-  
-  .stage-img { 
-    width: 100%; 
-    height: auto; 
-    max-height: 70vh; 
-  }
-  
-  .thumbs { 
-    margin: 0 0 56px; 
-    gap: 16px; 
-  }
-  
-  .thumb { 
-    flex: 0 0 92px; 
-    height: 92px; 
-  }
-  
-  .meta { 
-    grid-template-columns: 1fr; 
-    gap: 28px; 
-    padding-top: 28px; 
-  }
+  .page { padding: 32px var(--margin-mobile) 96px; }
+  .viewer { grid-template-columns: 1fr; }
+  .nav { display: none; }
+  .meta { grid-template-columns: 1fr; gap: 32px; }
 }
 </style>
