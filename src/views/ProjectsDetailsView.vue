@@ -266,8 +266,8 @@ watch(() => route.params.id, fetchProject)
         <button 
           v-for="(t, i) in thumbs" 
           :key="t.src + i" 
-          class="thumb flex-shrink-0 w-[112px] h-[112px] rounded-lg overflow-hidden border-2 transition opacity-50" 
-          :class="{ 'active opacity-100 border-[var(--color-accent)] scale-105': i === activeIndex }" 
+          class="thumb flex-shrink-0 w-[112px] h-[112px] rounded-lg overflow-hidden border-2 transition opacity-70" 
+          :class="{ 'active opacity-100 border-[var(--color-accent)]': i === activeIndex }" 
           @click="setActive(i)"
           :aria-label="'Mostra immagine ' + (i + 1)"
           :title="'Mostra immagine ' + (i + 1)"
@@ -299,9 +299,8 @@ watch(() => route.params.id, fetchProject)
 
         <div class="col">
           <h3 class="text-accent">Description:</h3>
-          <div v-if="project.description" class="desc leading-relaxed">
-            <p>{{ project.description }}</p>
-            
+     <div v-if="project.description" class="desc leading-relaxed">
+    <p v-html="project.description"></p>
             <div v-if="project.behance_url" class="mt-8">
               <a 
                 :href="project.behance_url" 
@@ -369,6 +368,7 @@ watch(() => route.params.id, fetchProject)
   font-size: clamp(15px, 1.05vw, 18px); 
   line-height: 1.8; 
   margin-bottom: 14px; 
+  white-space: pre-line;
 }
 
 .pill { 
