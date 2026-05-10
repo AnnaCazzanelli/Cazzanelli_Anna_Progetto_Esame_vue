@@ -55,9 +55,11 @@ watch(
     >
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/publications">Pubblicazioni</RouterLink>
       <RouterLink to="/projects">Progetti</RouterLink>
       <RouterLink to="/illustrations">Illustrazioni</RouterLink>
       <RouterLink to="/contacts">Contatti</RouterLink>
+    
     </nav>
 
     <!-- Toggle tema -->
@@ -98,9 +100,11 @@ watch(
     >
       <RouterLink to="/" @click="closeMobileMenu">Home</RouterLink>
       <RouterLink to="/about" @click="closeMobileMenu">About</RouterLink>
+      <RouterLink to="/publications" @click="closeMobileMenu">Pubblicazioni</RouterLink>
       <RouterLink to="/projects" @click="closeMobileMenu">Progetti</RouterLink>
       <RouterLink to="/illustrations" @click="closeMobileMenu">Illustrazioni</RouterLink>
       <RouterLink to="/contacts" @click="closeMobileMenu">Contatti</RouterLink>
+    
     </nav>
   </header>
 </template>
