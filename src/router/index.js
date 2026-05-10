@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router"
 /* Import viste */
 import HomeView from "@/views/HomeView.vue"
 import AboutView from "@/views/AboutView.vue"
+import PublicationsView from "@/views/PublicationsView.vue"
 import ProjectsView from "@/views/ProjectsView.vue"
 import ProjectsDetailsView from "@/views/ProjectsDetailsView.vue"
 import IllustrationsView from "@/views/IllustrationsView.vue"
@@ -59,6 +60,12 @@ const router = createRouter({
       path: "/illustrations/:id",
       name: "illustration-details",
       component: IllustrationsDetailsView,
+    },
+    /* Pubblicazioni */
+    {
+      path: "/publications",
+      name: "publications",
+      component: PublicationsView,
     },
   ],
 })
