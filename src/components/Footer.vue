@@ -33,7 +33,11 @@ import { RouterLink } from 'vue-router'
             class="footer-link hover:text-hover"
             title="About"
           >About</RouterLink>
-
+          <RouterLink
+            to="/publications"
+            class="footer-link hover:text-hover"
+            title="Publications"
+          >Publications</RouterLink>
           <RouterLink
             to="/projects"
             class="footer-link hover:text-hover"

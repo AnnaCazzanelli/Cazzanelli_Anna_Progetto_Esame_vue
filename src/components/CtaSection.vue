@@ -43,6 +43,14 @@ import { RouterLink } from 'vue-router'
       >
         Email <span class="sr-only"> – apri il client di posta</span>
       </a>
+      <RouterLink
+        to="/publications"
+        class="cta-link"
+        aria-label="Vai alla sezione pubblicazioni"
+        title="Vai alla sezione pubblicazioni"
+      >
+        Pubblicazioni <span class="sr-only"> – Vai alla sezione pubblicazioni</span>
+      </RouterLink>
 
       <RouterLink
         to="/projects"
